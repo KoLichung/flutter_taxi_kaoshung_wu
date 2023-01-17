@@ -19,6 +19,8 @@ class ServerApi{
   static const PATH_CASE_FINISH = '/api/case_finished';
   static const PATH_CASE_CANCEL = '/api/case_canceled';
 
+  static const PATH_GET_CURRENT_VERSION= '/api/get_current_version';
+
   static Uri standard({String? path, Map<String, String>? queryParameters}) {
     print(Uri.http(_HOST, '$path', queryParameters));
     return Uri.http(_HOST, '$path', queryParameters);

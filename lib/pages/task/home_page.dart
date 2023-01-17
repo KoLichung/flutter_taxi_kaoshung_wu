@@ -5,12 +5,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_taxi_chinghsien/notifier_models/task_model.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../config/serverApi.dart';
 import '../../color.dart';
 import '../../models/case.dart';
@@ -18,6 +18,8 @@ import '../../notifier_models/user_model.dart';
 import '../../widgets/custom_elevated_button.dart';
 import 'current_task.dart';
 import 'dart:io';
+import 'package:package_info_plus/package_info_plus.dart';
+
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -44,7 +46,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _handlePermission();
+    _getLatestAppVersion();
+
     var userModel = context.read<UserModel>();
+
+    if(userModel.currentAppVersion == null){
+      _initPackageInfo();
+    }
     if(userModel.deviceId==null){
       _getDeviceInfo();
     }
@@ -619,6 +627,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _initPackageInfo() async {
+    //抓取當前 app 版本
+    var userModel = context.read<UserModel>();
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    userModel.setCurrentAppVersion(packageInfo.version);
+    userModel.setCurrentAppVersionNumber(int.parse(packageInfo.buildNumber));
+    print('----------');
+    print(userModel.currentAppVersion);
+    print(userModel.currentAppVersionNumber);
+    print('----------');
+  }
+
   Future<void> _httpPostFCMDevice() async {
     print("postFCMDevice");
     String path = ServerApi.PATH_REGISTER_DEVICE;
@@ -647,6 +667,67 @@ class _HomePageState extends State<HomePage> {
       print(response.body);
 
     }catch(e){
+      print(e);
+    }
+  }
+
+  Future _getLatestAppVersion () async {
+    String path = ServerApi.PATH_GET_CURRENT_VERSION;
+    try {
+      final response = await http.get(ServerApi.standard(path: path));
+      if (response.statusCode == 200){
+        Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+
+        var userModel = context.read<UserModel>();
+        if(userModel.platformType!=null && userModel.currentAppVersion != null){
+          if(userModel.platformType=='ios' && userModel.currentAppVersionNumber! < int.parse(map['ios'])){
+            return showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                contentPadding: const EdgeInsets.all(20),
+                content: const Text('有新的 App 版本，請立即更新'),
+                actionsAlignment: MainAxisAlignment.center,
+                actions: [
+                  TextButton(
+                    child: const Text('前往更新'),
+                    onPressed: ()async{
+                      String app= 'appStore url';
+                      Uri url = Uri.parse(app);
+                      if (!await launchUrl(url)) {
+                        throw 'Could not launch $url';
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          }else if (userModel.platformType=='android' && userModel.currentAppVersionNumber! < int.parse(map['android'])){
+            return showDialog(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) => AlertDialog(
+                contentPadding: const EdgeInsets.all(20),
+                content: const Text('有新的 App 版本，請立即更新'),
+                actionsAlignment: MainAxisAlignment.center,
+                actions: [
+                  TextButton(
+                    child: const Text('前往更新'),
+                    onPressed: ()async{
+                      String app= 'google play url';
+                      Uri url = Uri.parse(app);
+                      if (!await launchUrl(url)) {
+                        throw 'Could not launch $url';
+                      }
+                    },
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
       print(e);
     }
   }

@@ -19,6 +19,8 @@ class UserModel extends ChangeNotifier {
   String? fcmToken;
   String? platformType;
   String? deviceId;
+  String? currentAppVersion;
+  int? currentAppVersionNumber;
 
   Position? currentPosition;
 
@@ -37,6 +39,16 @@ class UserModel extends ChangeNotifier {
   void resetPositionParams(){
     positionUpdateCount = 0;
     lastUpdateLocationTime =null;
+  }
+
+  void setCurrentAppVersion(String version){
+    currentAppVersion = version;
+    notifyListeners();
+  }
+
+  void setCurrentAppVersionNumber(int number){
+    currentAppVersionNumber = number;
+    notifyListeners();
   }
 
 }
