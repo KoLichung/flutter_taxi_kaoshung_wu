@@ -66,7 +66,7 @@ class MyApp extends StatelessWidget {
 
       theme: ThemeData(
         brightness: Brightness.light,
-        primaryColor: AppColor.yellow,
+        primaryColor: Colors.black54,
         textTheme: const TextTheme(
           button: TextStyle(fontSize: 16),
           //headline6: AppBar title
@@ -84,7 +84,7 @@ class MyApp extends StatelessWidget {
           checkColor: MaterialStateProperty.all(Colors.white),
         ),
         appBarTheme: const AppBarTheme(
-            color: AppColor.yellow,
+            color: Colors.black87,
             elevation: 0
         ),
       ),
@@ -124,12 +124,12 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: Colors.yellow, width: 1)),
+          border: Border(top: BorderSide(color: Colors.black87, width: 1)),
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppColor.yellow,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: Colors.black87,
+          unselectedItemColor: Colors.grey.shade400,
           currentIndex: _selectedIndex,
           // onTap: _onItemTapped,
           onTap: (int index) {

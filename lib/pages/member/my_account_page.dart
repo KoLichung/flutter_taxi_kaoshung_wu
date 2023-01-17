@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
-import 'package:flutter_taxi_chinghsien/config/constant.dart';
+import 'package:flutter_taxi_chinghsien/config/serverApi.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../notifier_models/user_model.dart';
@@ -32,7 +32,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: const [
               Icon(FontAwesomeIcons.taxi),
-              Text(' 聯合派車'),
+              SizedBox(width: 10,),
+              Text('24h派車'),
             ],
           ),
           // actions: [
@@ -51,18 +52,17 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 Row(
                   children: [
                     const Text('姓名：', style: TextStyle(fontSize: 18),),
-                    Text(userModel.user.name!, style: TextStyle(fontSize: 18),),
+                    Text(userModel.user.name!, style: const TextStyle(fontSize: 18),),
                 ],),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20,0,15,10),
                 child: Row(
                   children: [
-                    Text('狀態：', style: TextStyle(fontSize: 18),),
-                    (userModel.user.isPassed!)?
-                    Text('登入中', style: TextStyle(fontSize: 18))
-                    :
-                    Text('登入中(尚未通過審核)', style: TextStyle(fontSize: 18)),
+                    const Text('狀態：', style: TextStyle(fontSize: 18),),
+                    (userModel.user.isPassed!)
+                        ? const Text('登入中', style: TextStyle(fontSize: 18))
+                        : const Text('登入中(尚未通過審核)', style: TextStyle(fontSize: 18)),
                   ]
                 ),
               ),
@@ -75,7 +75,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 onPressed: (){
                   Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const Register(isEdit: true, lineId: ""))
+                      // MaterialPageRoute(builder: (context) => const Register(isEdit: true, lineId: ""))
+                      MaterialPageRoute(builder: (context) => const Register(isEdit: true,))
                   );
                 },
               ),
@@ -122,7 +123,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
   }
 
   Future _putUpdateOnlineState(String token, bool isOnline) async{
-    String path = Constant.PATH_UPDATE_ONLINE_STATE;
+    String path = ServerApi.PATH_UPDATE_ONLINE_STATE;
 
     try {
 
@@ -131,7 +132,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
       };
 
       final response = await http.put(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Token $token',

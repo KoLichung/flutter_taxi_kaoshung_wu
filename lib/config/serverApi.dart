@@ -1,5 +1,5 @@
-class Constant{
-  static const _HOST ='app.taxitaiwan.com';
+class ServerApi{
+  static const _HOST ='45.76.55.51';
 
   static const PATH_CREATE_USER = '/api/user/create/';
   static const PATH_USER_TOKEN = '/api/user/token/';
@@ -20,8 +20,8 @@ class Constant{
   static const PATH_CASE_CANCEL = '/api/case_canceled';
 
   static Uri standard({String? path, Map<String, String>? queryParameters}) {
-    print(Uri.https(_HOST, '$path', queryParameters));
-    return Uri.https(_HOST, '$path', queryParameters);
+    print(Uri.http(_HOST, '$path', queryParameters));
+    return Uri.http(_HOST, '$path', queryParameters);
   }
 
 }

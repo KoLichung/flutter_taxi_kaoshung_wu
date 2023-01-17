@@ -3,7 +3,7 @@ import 'dart:core';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_taxi_chinghsien/config/constant.dart';
+import 'package:flutter_taxi_chinghsien/config/serverApi.dart';
 import 'package:flutter_taxi_chinghsien/models/user_store_money.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -54,7 +54,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
                 Icon(FontAwesomeIcons.taxi),
-                Text(' 聯合派車'),
+                Text(' 24h派車'),
               ],
             ),
           )
@@ -218,10 +218,10 @@ class _MoneyRecordState extends State<MoneyRecord> {
   Future _fetchUserLeftMoney() async{
     var userModel = context.read<UserModel>();
     if(userModel.token != null){
-      String path = Constant.PATH_USER_LEFT_MONEY;
+      String path = ServerApi.PATH_USER_LEFT_MONEY;
       try {
         final response = await http.get(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'token ${userModel.token}'
@@ -247,10 +247,10 @@ class _MoneyRecordState extends State<MoneyRecord> {
   Future _fetchStoreMoneys() async {
     var userModel = context.read<UserModel>();
     if(userModel.token != null){
-      String path = Constant.PATH_STORE_MONEYS;
+      String path = ServerApi.PATH_STORE_MONEYS;
       try {
         final response = await http.get(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'token ${userModel.token}'
@@ -274,10 +274,10 @@ class _MoneyRecordState extends State<MoneyRecord> {
   Future _fetchUserCases() async {
     var userModel = context.read<UserModel>();
     if(userModel.token != null){
-      String path = Constant.PATH_USER_CASE;
+      String path = ServerApi.PATH_USER_CASE;
       try {
         final response = await http.get(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'token ${userModel.token}'

@@ -22,7 +22,7 @@ class CustomMemberPageButton extends StatelessWidget {
                   onPressed: () {
                     onPressed();
                   },
-                  icon: const Icon(Icons.arrow_forward_ios,color: AppColor.yellow,),
+                  icon: const Icon(Icons.arrow_forward_ios,color: Colors.black54,),
                 ),
               ),
             )), //LINE小秘書

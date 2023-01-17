@@ -16,13 +16,13 @@ class CustomElevatedButton extends StatelessWidget {
             onPressed();
           },
           style: ElevatedButton.styleFrom(
-              primary: AppColor.yellow,
+              backgroundColor: AppColor.yellow,
               elevation: 0
           ),
           child: SizedBox(
             height: 46,
             child: Align(
-              child: Text(title,style: TextStyle(fontSize: 20),),
+              child: Text(title,style: const TextStyle(fontSize: 20),),
               alignment: Alignment.center,
             ),
           )

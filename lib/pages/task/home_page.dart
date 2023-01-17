@@ -11,7 +11,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import '../../config/constant.dart';
+import '../../config/serverApi.dart';
 import '../../color.dart';
 import '../../models/case.dart';
 import '../../notifier_models/user_model.dart';
@@ -83,30 +83,29 @@ class _HomePageState extends State<HomePage> {
           children: const [
             Icon(FontAwesomeIcons.taxi),
             SizedBox(width: 10,),
-            Text('聯合派車'),
+            Text('24h派車'),
           ],
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(70.0),
           child: Container(
-              color: Colors.white,
               height: 70,
-              child: Column(
-                  children: [
-                    const SizedBox(height: 5),
-                    Consumer<UserModel>(builder: (context, userModel, child) =>
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('我的狀態：'),
-                            userModel.isOnline? const Text('上線中') : const Text('休息中'),
-                            const SizedBox(width: 10,),
-                            userModel.isOnline? statusOnlineButton() : statusOfflineButton(),
-                          ],
-                        ),
-                    ),
-                    const Divider(color: Colors.grey,),
-                  ]
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  bottom: BorderSide(width: 1.0, color: Colors.grey.shade300),
+                )
+              ),
+              child: Consumer<UserModel>(builder: (context, userModel, child) =>
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('我的狀態：'),
+                      userModel.isOnline? const Text('上線中') : const Text('休息中'),
+                      const SizedBox(width: 10,),
+                      userModel.isOnline? statusOnlineButton() : statusOfflineButton(),
+                    ],
+                  ),
               ),
           )
 
@@ -266,34 +265,36 @@ class _HomePageState extends State<HomePage> {
 
   onCallScene(bool isPassed){
     return SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const SizedBox(height: 100),
-          Column(
-            children: [
-              const Icon(FontAwesomeIcons.mugHot,size: 28,),
-              const SizedBox(height: 5,),
-              const Text('暫時沒有任務'),
-              (!isPassed)? const Text('(尚未通過審核，無法接任務！)'):Container(),
-            ],
-          ),
-          const SizedBox(height: 50),
-          Column(
-            children: [
-              const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
-              Container(
-                margin: EdgeInsets.only(bottom: 10),
-                height: 260,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image:AssetImage('images/services.png',),
-                      fit:BoxFit.fitHeight),),
-              ),
-            ],
-          ),
-          // ourServiceList()
-        ],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(height: 100),
+            Column(
+              children: [
+                const Icon(FontAwesomeIcons.mugHot,size: 28,),
+                const SizedBox(height: 5,),
+                const Text('暫時沒有任務'),
+                (!isPassed)? const Text('(尚未通過審核，無法接任務！)'):Container(),
+              ],
+            ),
+            const SizedBox(height: 50),
+            // Column(
+            //   children: [
+            //     const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
+            //     Container(
+            //       margin: EdgeInsets.only(bottom: 10),
+            //       height: 260,
+            //       decoration: const BoxDecoration(
+            //         image: DecorationImage(
+            //             image:AssetImage('images/services.png',),
+            //             fit:BoxFit.fitHeight),),
+            //     ),
+            //   ],
+            // ),
+            // ourServiceList()
+          ],
+        ),
       ),
     );
 
@@ -356,31 +357,33 @@ class _HomePageState extends State<HomePage> {
 
   offlineScene(){
     return SingleChildScrollView(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const SizedBox(height: 100),
-          Column(
-            children: const [
-              Icon(Icons.bolt_outlined,size: 40,),
-              Text('您現在休息中~'),
-            ],),
-          const SizedBox(height: 50),
-          Column(
-            children: [
-              const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
-              Container(
-                margin: EdgeInsets.only(bottom: 10),
-                height: 260,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image:AssetImage('images/services.png',),
-                      fit:BoxFit.fitHeight),),
-              ),
-            ],
-          ),
-          // ourServiceList()
-        ],
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(height: 100),
+            Column(
+              children: const [
+                Icon(Icons.bolt_outlined,size: 40,),
+                Text('您現在休息中~'),
+              ],),
+            const SizedBox(height: 50),
+            // Column(
+            //   children: [
+            //     const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
+            //     Container(
+            //       margin: EdgeInsets.only(bottom: 10),
+            //       height: 260,
+            //       decoration: const BoxDecoration(
+            //         image: DecorationImage(
+            //             image:AssetImage('images/services.png',),
+            //             fit:BoxFit.fitHeight),),
+            //     ),
+            //   ],
+            // ),
+            // ourServiceList()
+          ],
+        ),
       ),
     );
   }
@@ -448,7 +451,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future _fetchUpdateLatLng(String token, double lat, double lng) async {
-    String path = Constant.PATH_UPDATE_LAT_LNG;
+    String path = ServerApi.PATH_UPDATE_LAT_LNG;
     final queryParameters = {
       'lat': lat.toString(),
       'lng': lng.toString(),
@@ -456,7 +459,7 @@ class _HomePageState extends State<HomePage> {
 
     try {
       final response = await http.get(
-        Constant.standard(path: path, queryParameters: queryParameters),
+        ServerApi.standard(path: path, queryParameters: queryParameters),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'token $token'
@@ -474,11 +477,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future _fetchCases(String token) async {
-    String path = Constant.PATH_GET_CASES;
+    String path = ServerApi.PATH_GET_CASES;
 
     try {
       final response = await http.get(
-        Constant.standard(path: path),
+        ServerApi.standard(path: path),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'token $token'
@@ -501,7 +504,7 @@ class _HomePageState extends State<HomePage> {
   Future _putCaseConfirm(String token, Case theCase) async {
     print("case confirm");
 
-    String path = Constant.PATH_CASE_CONFIREM;
+    String path = ServerApi.PATH_CASE_CONFIREM;
 
     try {
 
@@ -510,7 +513,7 @@ class _HomePageState extends State<HomePage> {
       };
 
       final response = await http.put(
-          Constant.standard(path: path, queryParameters: queryParameters),
+          ServerApi.standard(path: path, queryParameters: queryParameters),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Token $token',
@@ -550,7 +553,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future _putUpdateOnlineState(String token, bool isOnline) async{
-    String path = Constant.PATH_UPDATE_ONLINE_STATE;
+    String path = ServerApi.PATH_UPDATE_ONLINE_STATE;
 
     try {
 
@@ -559,7 +562,7 @@ class _HomePageState extends State<HomePage> {
       };
 
       final response = await http.put(
-        Constant.standard(path: path),
+        ServerApi.standard(path: path),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token $token',
@@ -618,7 +621,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _httpPostFCMDevice() async {
     print("postFCMDevice");
-    String path = Constant.PATH_REGISTER_DEVICE;
+    String path = ServerApi.PATH_REGISTER_DEVICE;
     var userModel = context.read<UserModel>();
 
     try {
@@ -633,7 +636,7 @@ class _HomePageState extends State<HomePage> {
       print(userModel.platformType);
       print(userModel.token);
 
-      final response = await http.post(Constant.standard(path: path),
+      final response = await http.post(ServerApi.standard(path: path),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token ${userModel.token!}',

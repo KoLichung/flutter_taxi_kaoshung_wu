@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../config/constant.dart';
+import '../../config/serverApi.dart';
 import '../../fake_customer_model.dart';
 import '../../color.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +60,7 @@ class _CurrentTaskState extends State<CurrentTask> {
           children: const [
             Icon(FontAwesomeIcons.taxi),
             SizedBox(width: 10,),
-            Text('聯合派車'),
+            Text('24h派車'),
           ],
         ),
       ),
@@ -283,7 +283,7 @@ class _CurrentTaskState extends State<CurrentTask> {
   }
 
   Future _putCaseArrived(String token, int caseId) async {
-    String path = Constant.PATH_CASE_ARRIVE;
+    String path = ServerApi.PATH_CASE_ARRIVE;
 
     try {
       // Map queryParameters = {
@@ -295,7 +295,7 @@ class _CurrentTaskState extends State<CurrentTask> {
       };
 
       final response = await http.put(
-          Constant.standard(path: path, queryParameters: queryParameters),
+          ServerApi.standard(path: path, queryParameters: queryParameters),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Token $token',
@@ -321,7 +321,7 @@ class _CurrentTaskState extends State<CurrentTask> {
   }
 
   Future _putCaseCatched(String token, Case theCase) async {
-    String path = Constant.PATH_CASE_CATCHED;
+    String path = ServerApi.PATH_CASE_CATCHED;
 
     try {
       // Map queryParameters = {
@@ -333,7 +333,7 @@ class _CurrentTaskState extends State<CurrentTask> {
       };
 
       final response = await http.put(
-        Constant.standard(path: path, queryParameters: queryParameters),
+        ServerApi.standard(path: path, queryParameters: queryParameters),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token $token',
@@ -360,7 +360,7 @@ class _CurrentTaskState extends State<CurrentTask> {
   }
 
   Future _putCaseCanceled(String token, String memo, int caseId) async {
-    String path = Constant.PATH_CASE_CANCEL;
+    String path = ServerApi.PATH_CASE_CANCEL;
 
     try {
       final bodyParams = {
@@ -372,7 +372,7 @@ class _CurrentTaskState extends State<CurrentTask> {
       };
 
       final response = await http.put(
-        Constant.standard(path: path, queryParameters: queryParameters),
+        ServerApi.standard(path: path, queryParameters: queryParameters),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token $token',

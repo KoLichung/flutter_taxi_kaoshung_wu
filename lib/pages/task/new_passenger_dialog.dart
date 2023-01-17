@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_taxi_chinghsien/config/constant.dart';
+import 'package:flutter_taxi_chinghsien/config/serverApi.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../color.dart';
@@ -132,10 +132,10 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
   }
 
   Future _fetchCases(String token) async {
-    String path = Constant.PATH_GET_CASES;
+    String path = ServerApi.PATH_GET_CASES;
     try {
       final response = await http.get(
-        Constant.standard(path: path),
+        ServerApi.standard(path: path),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'token $token'
@@ -159,7 +159,7 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
   Future _putCaseConfirm(String token, Case theCase) async {
     print("case confirm");
 
-    String path = Constant.PATH_CASE_CONFIREM;
+    String path = ServerApi.PATH_CASE_CONFIREM;
 
     try {
       final queryParameters = {
@@ -167,7 +167,7 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
       };
 
       final response = await http.put(
-        Constant.standard(path: path, queryParameters: queryParameters),
+        ServerApi.standard(path: path, queryParameters: queryParameters),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token $token',

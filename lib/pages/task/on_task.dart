@@ -11,7 +11,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../config/constant.dart';
+import '../../config/serverApi.dart';
 import '../../fake_customer_model.dart';
 import '../../color.dart';
 import '../../models/case.dart';
@@ -91,7 +91,7 @@ class _OnTaskState extends State<OnTask> {
           children: const [
             Icon(FontAwesomeIcons.taxi),
             SizedBox(width: 10,),
-            Text('聯合派車'),
+            Text('24h派車'),
           ],
         ),
       ),
@@ -249,7 +249,7 @@ class _OnTaskState extends State<OnTask> {
   }
 
   Future _putCaseFinish(String token, int caseId, String offAddress, int caseMoney) async {
-    String path = Constant.PATH_CASE_FINISH;
+    String path = ServerApi.PATH_CASE_FINISH;
 
     try {
       final queryParameters = {
@@ -262,7 +262,7 @@ class _OnTaskState extends State<OnTask> {
       };
 
       final response = await http.put(
-        Constant.standard(path: path, queryParameters: queryParameters),
+        ServerApi.standard(path: path, queryParameters: queryParameters),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Token $token',

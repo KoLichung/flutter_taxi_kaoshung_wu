@@ -10,6 +10,7 @@ class User {
   String? carModel;
   String? carColor;
   int? numberSites;
+  String? carMemo;
   bool? isOnline;
   int? leftMoney;
   bool? isPassed;
@@ -29,6 +30,7 @@ class User {
         this.isOnline,
         this.leftMoney,
         this.isPassed,
+        this.carMemo
       });
 
   User.fromJson(Map<String, dynamic> json) {
@@ -54,6 +56,7 @@ class User {
     isOnline = json['is_online'];
     leftMoney = json['left_money'];
     isPassed = json['is_passed'];
+    carMemo = json['car_memo'];
   }
 
   Map<String, dynamic> toJson() {
@@ -72,6 +75,7 @@ class User {
     data['is_online'] = this.isOnline;
     data['left_money'] = this.leftMoney;
     data['is_passed'] = this.isPassed;
+    data['car_memo'] = this.carMemo;
     return data;
   }
 }

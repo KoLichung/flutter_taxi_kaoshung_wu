@@ -1,9 +1,8 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
-import '../config/constant.dart';
+import '../config/serverApi.dart';
 import '../models/user.dart';
 import '../notifier_models/user_model.dart';
 import '../widgets/custom_elevated_button.dart';
@@ -12,9 +11,10 @@ import 'package:http/http.dart' as http;
 
 class Register extends StatefulWidget {
 
-  final String lineId;
+  // final String lineId;
   final bool isEdit;
-  const Register({Key? key, required this.isEdit, required this.lineId}) : super(key: key);
+  // const Register({Key? key, required this.isEdit, required this.lineId}) : super(key: key);
+  const Register({Key? key, required this.isEdit}) : super(key: key);
 
   @override
   _RegisterState createState() => _RegisterState();
@@ -37,6 +37,9 @@ class _RegisterState extends State<Register> {
   TextEditingController carModelController = TextEditingController();
   TextEditingController carColorController = TextEditingController();
   TextEditingController seatNumberController = TextEditingController();
+  TextEditingController carMemoController = TextEditingController();
+  TextEditingController pwdController = TextEditingController();
+
 
   DriverGender? _driverGender = DriverGender.male;
   CarType? _carType = CarType.car;
@@ -50,7 +53,6 @@ class _RegisterState extends State<Register> {
     if(widget.isEdit){
       var userModel = context.read<UserModel>();
       User user = userModel.user;
-
       driverNameController.text = user.name!;
       idLast5NumberController.text = user.userId!;
       carPlateController.text = user.vehicalLicence!;
@@ -59,6 +61,7 @@ class _RegisterState extends State<Register> {
       carModelController.text = user.carModel!;
       carColorController.text = user.carColor!;
       seatNumberController.text = user.numberSites!.toString();
+      carMemoController.text = user.carMemo!;
 
       if(user.gender == '女'){
         _driverGender = DriverGender.female;
@@ -86,14 +89,9 @@ class _RegisterState extends State<Register> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
+          centerTitle: true,
           automaticallyImplyLeading: (widget.isEdit)?true:false,
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(FontAwesomeIcons.taxi),
-              Text('聯合派車-基本資料'),
-            ],
-          ),
+          title: const Text('基本資料'),
         ),
         body: SingleChildScrollView(
           child: Form(
@@ -101,17 +99,20 @@ class _RegisterState extends State<Register> {
             child: Column(
               children: [
                 const SizedBox(height: 20,),
-                validatorTextFormField('*真實姓名','',driverNameController),
-                validatorTextFormField('*手機號碼','',phoneNumberController),
-                validatorTextFormField('*身份字號','',idNumberController),
-                validatorTextFormField('*台號(身分證後五碼)','',idLast5NumberController),
+                validatorTextFormField('*真實姓名','',driverNameController, false),
+                validatorTextFormField('*手機號碼','',phoneNumberController, false),
+                validatorTextFormField('*密碼','',pwdController, true),
+                validatorTextFormField('*身份字號','',idNumberController, false),
+                validatorTextFormField('*台號(身分證後五碼)','',idLast5NumberController, false),
                 getDriverGender(),
-                validatorTextFormField('*車號(ABC-123)','',carPlateController),
+                validatorTextFormField('*車號(ABC-123)','',carPlateController, false),
                 getCarType(),
                 getCarCategory(),
                 registerTextField('車型','Toyota Wish',carModelController),
                 registerTextField('顏色','白',carColorController),
                 registerTextField('座位數','4',seatNumberController),
+                registerTextField('駕駛備註','車上不可飲食',carMemoController),
+
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 30,vertical: 20),
                   child: CustomElevatedButton(
@@ -160,13 +161,19 @@ class _RegisterState extends State<Register> {
                           }else{
                             user.numberSites = 4;
                           }
+                          user.carMemo = carMemoController.text;
+
+
 
                           if(widget.isEdit) {
                             _putUpdateUserData(userModel.token!, user, user.isOnline!);
                           }else{
-                            _postCreateUser(user, widget.lineId);
+                            // _postCreateUser(user, widget.lineId);
+                            _postCreateUser(user, phoneNumberController.text, pwdController.text);
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('註冊中，請稍待~')));
                           }
+
+
                           // Navigator.pushAndRemoveUntil(
                           //   context,
                           //   MaterialPageRoute(builder: (context) => const MyHomePage()), (Route<dynamic> route) => false, );
@@ -180,7 +187,7 @@ class _RegisterState extends State<Register> {
         ));
   }
 
-  validatorTextFormField(String title, String hintText, TextEditingController controller){
+  validatorTextFormField(String title, String hintText, TextEditingController controller, bool isObscure){
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
       child: Column(
@@ -191,6 +198,7 @@ class _RegisterState extends State<Register> {
             margin: const  EdgeInsets.symmetric(vertical: 2),
             height: 62,
             child: TextFormField(
+              obscureText: isObscure,
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return '此欄必填';
@@ -457,7 +465,7 @@ class _RegisterState extends State<Register> {
   }
 
   Future _putUpdateUserData(String token, User user, bool isOnline) async {
-    String path = Constant.PATH_USER_DATA;
+    String path = ServerApi.PATH_USER_DATA;
 
     print(token);
     print(user.phone);
@@ -476,10 +484,11 @@ class _RegisterState extends State<Register> {
         'car_color': user.carColor,
         'number_sites': user.numberSites,
         'is_online': isOnline,
+        'car_memo':user.carMemo,
       };
 
       final response = await http.put(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'Authorization': 'Token $token',
@@ -500,8 +509,10 @@ class _RegisterState extends State<Register> {
     }
   }
 
-  Future _postCreateUser(User user, String lineId) async{
-    String path = Constant.PATH_CREATE_USER;
+  // Future _postCreateUser(User user, String lineId) async{
+  Future _postCreateUser(User user, String phone, String password) async{
+
+    String path = ServerApi.PATH_CREATE_USER;
 
     // try {
       Map queryParameters = {
@@ -516,12 +527,14 @@ class _RegisterState extends State<Register> {
         'car_model': user.carModel,
         'car_color': user.carColor,
         'number_sites': user.numberSites,
-        'line_id': lineId,
-        'password': "00000",
+        // 'line_id': lineId,
+        'car_memo':user.carMemo,
+        // 'password': "00000",
+        'password': password
+
       };
 
-      final response = await http.post(
-          Constant.standard(path: path),
+      final response = await http.post(ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             // 'Authorization': 'Token $token',
@@ -533,14 +546,16 @@ class _RegisterState extends State<Register> {
       print(response.body);
 
       if(response.statusCode == 201) {
-        Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
-        User theUser = User.fromJson(map);
-
-        String token = await _getUserToken(lineId);
-
         var userModel = context.read<UserModel>();
-        userModel.setUser(theUser);
+        // Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+        // User theUser = User.fromJson(map);
+
+        // String token = await _getUserToken(lineId);
+        String token = await _getUserToken(phone, password);
         userModel.token = token;
+
+        User? theUser = await _getUserData(token);
+        userModel.setUser(theUser!);
 
         Navigator.of(context).pushNamed('/main');
       }else{
@@ -553,17 +568,20 @@ class _RegisterState extends State<Register> {
 
   }
 
-  Future<String> _getUserToken(String line_id) async {
-    String path = Constant.PATH_USER_TOKEN;
+  // Future<String> _getUserToken(String line_id) async {
+  Future<String> _getUserToken(String phone, String password) async {
+      String path = ServerApi.PATH_USER_TOKEN;
     try {
       Map queryParameters = {
-        'phone': '0000000000',
-        'password': '00000',
-        'line_id': line_id,
+        'phone': phone,
+        'password': password,
+        // 'phone': '0000000000',
+        // 'password': '00000',
+        // 'line_id': line_id,
       };
 
       final response = await http.post(
-          Constant.standard(path: path),
+          ServerApi.standard(path: path),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
@@ -576,6 +594,7 @@ class _RegisterState extends State<Register> {
         return token;
       }else{
         print(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("無法取得Token！"),));
         return "error";
       }
     } catch (e) {
@@ -584,5 +603,32 @@ class _RegisterState extends State<Register> {
     }
   }
 
+  Future<User?> _getUserData(String token) async {
+    String path = ServerApi.PATH_USER_DATA;
+    try {
+      final response = await http.get(
+        ServerApi.standard(path: path),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Token $token',
+        },
+      );
+
+      print(response.body);
+
+      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+      User theUser = User.fromJson(map);
+
+      return theUser;
+
+    } catch (e) {
+      print(e);
+
+      // return null;
+      // return User(phone: '0000000000', name: 'test test', isGottenLineId: false, token: '4b36f687579602c485093c868b6f2d8f24be74e2',isOwner: false);
+
+    }
+    return null;
+  }
 }
 
