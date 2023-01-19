@@ -50,7 +50,7 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
       title: Container(
         width: 300,
         padding: const EdgeInsets.all(15),
-        color: AppColor.yellow,
+        color: AppColor.primary,
         child: const Text(
           '新任務：是否先承接起來？',
           style: TextStyle(color: Colors.white),
@@ -80,7 +80,7 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
         :
         Text('讀取中'),
       ),
-      backgroundColor: AppColor.yellow,
+      backgroundColor: AppColor.primary,
       actions: <Widget>[
         OutlinedButton(
             style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white)),

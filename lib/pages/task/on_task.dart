@@ -38,6 +38,8 @@ class _OnTaskState extends State<OnTask> {
 
   String taskStatus = '載客中';
 
+  bool isStartCounting = false;
+
   bool isNextTaskVisible = false;
 
   TextEditingController priceController = TextEditingController();
@@ -51,19 +53,17 @@ class _OnTaskState extends State<OnTask> {
     // fetchNewTask();
     super.initState();
 
-    _taskTimer = Timer.periodic(const Duration(seconds:5), (timer){
-      var taskModel = context.read<TaskModel>();
-      // 2.5 m/s ~ 9km/hr
-      if (
-         taskModel.currentVelocity.isNaN ||
-         (taskModel.currentVelocity <=2.5 && taskModel.currentVelocity >=0) ||
-         (taskModel.lastFiveSecondPosition!=null && taskModel.lastFiveSecondPosition == taskModel.routePositions.last)
-      ){
-        taskModel.secondIdle = taskModel.secondIdle + 5;
-      }
-      taskModel.setCurrentTaskPrice();
-      if(taskModel.routePositions.isNotEmpty) {
-        taskModel.lastFiveSecondPosition = taskModel.routePositions.last;
+    _taskTimer = Timer.periodic(const Duration(seconds:10), (timer){
+
+      if(isStartCounting) {
+        // 10秒計算一次時間
+        var taskModel = context.read<TaskModel>();
+        taskModel.secondTotal = taskModel.secondTotal + 10;
+        taskModel.setCurrentTaskPrice();
+
+        if (taskModel.routePositions.isNotEmpty) {
+          taskModel.lastFiveSecondPosition = taskModel.routePositions.last;
+        }
       }
     });
 
@@ -106,13 +106,13 @@ class _OnTaskState extends State<OnTask> {
               }
             }),
             Consumer<TaskModel>(builder: (context, taskModel, child){
-                    return Text('目前的 公里數:${taskModel.totalDistance.toStringAsFixed(3)}km, 怠速秒數：${taskModel.secondIdle}秒');
+                    return Text('目前的 公里數:${taskModel.totalDistance.toStringAsFixed(3)}km, 所有秒數：${taskModel.secondTotal}秒');
             }),
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                  border: Border.all(color: AppColor.yellow, width: 1),
+                  border: Border.all(color: AppColor.primary, width: 1),
                   borderRadius: BorderRadius.circular(3)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,7 +120,7 @@ class _OnTaskState extends State<OnTask> {
                   RichText(
                     text: TextSpan(
                       text: '目前任務：',
-                      style: const TextStyle(color: AppColor.yellow, fontSize: 22,),
+                      style: const TextStyle(color: AppColor.primary, fontSize: 22,),
                       children: <TextSpan>[
                         TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
                       ],
@@ -133,7 +133,7 @@ class _OnTaskState extends State<OnTask> {
                   RichText(
                     text: TextSpan(
                       text: '上車：',
-                      style: const TextStyle(color: AppColor.yellow, fontSize: 20,),
+                      style: const TextStyle(color: AppColor.primary, fontSize: 20,),
                       children: <TextSpan>[
                         TextSpan(text: widget.theCase.onAddress,style: const TextStyle(color: Colors.black87)),
                       ],
@@ -144,19 +144,19 @@ class _OnTaskState extends State<OnTask> {
                     //   RichText(
                     //     text: TextSpan(
                     //       text: '下車：',
-                    //       style: const TextStyle(color: AppColor.yellow, fontSize: 20,),
+                    //       style: const TextStyle(color: AppColor.primary, fontSize: 20,),
                     //       children: <TextSpan>[
                     //         TextSpan(text: offAddress,style: const TextStyle(color: Colors.black87,fontSize: 20)),
                     //       ],
                     //     ),
                     //   ),
                     children: [
-                      const Text("下車：", style:  TextStyle(color: AppColor.yellow, fontSize: 20,)),
+                      const Text("下車：", style:  TextStyle(color: AppColor.primary, fontSize: 20,)),
                       const SizedBox(width: 10,),
                       CustomSmallElevatedButton(
                           icon: const Icon(Icons.near_me_outlined,size: 16,),
                           title: '導航',
-                          color: AppColor.yellow,
+                          color: AppColor.primary,
                           onPressed: (){
                             // _launchMap(offAddress);
                             MapsLauncher.launchQuery(offAddress);
@@ -169,7 +169,7 @@ class _OnTaskState extends State<OnTask> {
                       CustomSmallElevatedButton(
                         icon: const Icon(Icons.edit_outlined),
                           title: '修改下車地址',
-                          color: AppColor.yellow,
+                          color: AppColor.primary,
                           onPressed: ()async{
                             var data = await showDialog<String>(
                                 context: context,
@@ -233,12 +233,20 @@ class _OnTaskState extends State<OnTask> {
                   ),
                   const Text('(僅供參考，請依實際車資輸入)',style: TextStyle(color: AppColor.red),),
                   const SizedBox(height: 20),
+                  (isStartCounting)?
                   CustomElevatedButton(
                       onPressed: (){
                         var userModel = context.read<UserModel>();
                         _putCaseFinish(userModel.token!, widget.theCase.id!, offAddress, int.parse(priceController.text));
                       },
                       title: '乘客下車')
+                  :
+                  CustomElevatedButton(
+                      onPressed: (){
+                        isStartCounting = true;
+                        setState(() {});
+                      },
+                      title: '開始跳錶計費')
                 ],
               ),
             )

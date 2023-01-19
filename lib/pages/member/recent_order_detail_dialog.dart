@@ -27,7 +27,7 @@ class _RecentOrderDetailDialogState extends State<RecentOrderDetailDialog> {
       title: Container(
         width: 300,
         padding: const EdgeInsets.all(15),
-        color: AppColor.yellow,
+        color: AppColor.primary,
         child: const Text(
           '歷史訂單',
           style: TextStyle(color: Colors.white),
@@ -51,7 +51,7 @@ class _RecentOrderDetailDialogState extends State<RecentOrderDetailDialog> {
           ],
         ),
       ),
-      backgroundColor: AppColor.yellow,
+      backgroundColor: AppColor.primary,
       actions: <Widget>[
         OutlinedButton(
             style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.white)),

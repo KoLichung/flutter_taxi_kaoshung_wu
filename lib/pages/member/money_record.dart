@@ -113,7 +113,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                     child: const Text(
                       '日期',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                      style: TextStyle(color: AppColor.primary,fontSize: 15),
                     ))),
             GridColumn(
                 columnName: 'increase_money',
@@ -122,7 +122,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                     child: const Text(
                       '入扣帳',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                      style: TextStyle(color: AppColor.primary,fontSize: 15),
                     )
                 )
             ),
@@ -133,7 +133,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                     child: const Text(
                       '當時餘額',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                      style: TextStyle(color: AppColor.primary,fontSize: 15),
                     )
                 )
             ),
@@ -144,7 +144,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                     child: const Text(
                       '結算餘額',
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                      style: TextStyle(color: AppColor.primary,fontSize: 15),
                     )
                 )
             ),
@@ -180,7 +180,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                 child: const Text(
                   '日期',
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                  style: TextStyle(color: AppColor.primary,fontSize: 15),
                 ))),
           GridColumn(
               columnName: 'onAddress',
@@ -190,7 +190,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                   child: const Text(
                     '上車',
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                    style: TextStyle(color: AppColor.primary,fontSize: 15),
                   ))),
           GridColumn(
               columnName: 'offAddress',
@@ -199,7 +199,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                   child: const Text(
                     '下車',
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                    style: TextStyle(color: AppColor.primary,fontSize: 15),
                   ))),
           GridColumn(
               columnName: 'caseMoney',
@@ -208,7 +208,7 @@ class _MoneyRecordState extends State<MoneyRecord> {
                   child: const Text(
                     '車資',
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: AppColor.yellow,fontSize: 15),
+                    style: TextStyle(color: AppColor.primary,fontSize: 15),
                   ))),
         ]
       ),

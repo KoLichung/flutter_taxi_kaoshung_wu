@@ -25,7 +25,7 @@ class _OnTaskChangeAddressDialogState extends State<OnTaskChangeAddressDialog> {
       title: Container(
         width: 360,
         padding: const EdgeInsets.all(10),
-        color: AppColor.yellow,
+        color: AppColor.primary,
         child: const Text(
           '修改地址',
           style: TextStyle(color: Colors.white),
@@ -44,7 +44,7 @@ class _OnTaskChangeAddressDialogState extends State<OnTaskChangeAddressDialog> {
           ),
         ),
       ),
-      backgroundColor: AppColor.yellow,
+      backgroundColor: AppColor.primary,
       actions: <Widget>[
         OutlinedButton(
             child:const  Text('確定', style: TextStyle(color: Colors.white),),

@@ -16,7 +16,7 @@ class CustomElevatedButton extends StatelessWidget {
             onPressed();
           },
           style: ElevatedButton.styleFrom(
-              backgroundColor: AppColor.yellow,
+              backgroundColor: AppColor.primary,
               elevation: 0
           ),
           child: SizedBox(

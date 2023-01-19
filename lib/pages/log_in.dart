@@ -105,10 +105,10 @@ class _LogInState extends State<LogIn> {
             Column(
               children: [
                 Container(
-                    margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+                    margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                     alignment: Alignment.center,
-                    height: 40,
-                    width: 270,
+                    height: 50,
+                    width: 320,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -131,8 +131,8 @@ class _LogInState extends State<LogIn> {
                 Container(
                     margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
                     alignment: Alignment.center,
-                    height: 40,
-                    width: 270,
+                    height: 50,
+                    width: 320,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -151,7 +151,7 @@ class _LogInState extends State<LogIn> {
                             color: Colors.black54,
                           )),
                     )),
-                const SizedBox(height: 20,),
+                const SizedBox(height: 10,),
                 ElevatedButton(
                   child: const Text('登入'),
                     onPressed: (){
@@ -161,11 +161,12 @@ class _LogInState extends State<LogIn> {
                     shape:RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20.0),
                     ),
-                    fixedSize: const Size.fromWidth(270),
+                    fixedSize: const Size(320, 50),
                     backgroundColor: Colors.black54,
                     side: const BorderSide(color: Colors.white)
                   ),
                 ),
+                const SizedBox(height: 10,),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

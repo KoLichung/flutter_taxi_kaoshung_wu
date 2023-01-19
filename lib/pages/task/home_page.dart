@@ -178,6 +178,7 @@ class _HomePageState extends State<HomePage> {
             }
 
             Position onlinePosition = await _getCurrentPosition();
+            print('onlinePosition ${onlinePosition}');
             _fetchUpdateLatLng(userModel.token!, onlinePosition.latitude, onlinePosition.longitude);
 
             userModel.positionStreamSubscription =  Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) {
@@ -319,7 +320,7 @@ class _HomePageState extends State<HomePage> {
                 margin: const EdgeInsets.symmetric(horizontal: 18,vertical: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 14,vertical: 14),
                 decoration: BoxDecoration(
-                    border: Border.all(color: AppColor.yellow, width: 1),
+                    border: Border.all(color: AppColor.primary, width: 1),
                     borderRadius: BorderRadius.circular(3)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,10 +331,10 @@ class _HomePageState extends State<HomePage> {
                         margin:const EdgeInsets.fromLTRB(0,4,8,0),
                         padding:const EdgeInsets.symmetric(vertical: 2,horizontal: 8),
                         decoration:BoxDecoration(
-                          border: Border.all(color: AppColor.yellow, width: 1),
+                          border: Border.all(color: AppColor.primary, width: 1),
                           borderRadius: BorderRadius.circular(2),
                         ),
-                        child: const Text('客戶',style: TextStyle(color: AppColor.yellow),),
+                        child: const Text('客戶',style: TextStyle(color: AppColor.primary),),
                       ),
                       if(currentPosition!=null)Text('距離 ${getDistance(myCases[i], currentPosition)}'),
                     ],),

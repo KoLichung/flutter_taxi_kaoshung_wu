@@ -73,14 +73,14 @@ class MyApp extends StatelessWidget {
           headline6: TextStyle(fontSize: 18.0, fontWeight: FontWeight.w500),
           //subtitle1: dropDownButton Text
           //subtitle2: body title
-          subtitle2: TextStyle(color: AppColor.yellow, fontSize: 20,fontWeight: FontWeight.bold, ),
+          subtitle2: TextStyle(color: AppColor.primary, fontSize: 20,fontWeight: FontWeight.bold, ),
           //bodyText2: default body text
           bodyText2: TextStyle(color: Colors.black, fontSize: 16,height: 1.6),
           //bodyText1: body text big and bold
           bodyText1: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.w500),
         ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.all(AppColor.yellow),
+          fillColor: MaterialStateProperty.all(AppColor.primary),
           checkColor: MaterialStateProperty.all(Colors.white),
         ),
         appBarTheme: const AppBarTheme(

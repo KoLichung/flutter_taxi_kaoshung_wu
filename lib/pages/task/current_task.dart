@@ -73,7 +73,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.yellow, width: 1),
+                      border: Border.all(color: AppColor.primary, width: 1),
                       borderRadius: BorderRadius.circular(3)),
                   child:Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +93,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                           GestureDetector(
                             child: const CustomSmallOutlinedText(
                                 title: '問題回報',
-                                color: AppColor.yellow),
+                                color: AppColor.primary),
                             onTap: () async {
                               var data = await showDialog<String>(
                                   context: context,
@@ -120,7 +120,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                       //       CustomSmallElevatedButton(
                       //           icon: const Icon(Icons.near_me_outlined,size: 16,),
                       //           title: '導航',
-                      //           color: AppColor.yellow,
+                      //           color: AppColor.primary,
                       //           onPressed: (){
                       //             _launchMap(widget.theCase.onAddress!);
                       //           })
@@ -135,7 +135,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                             CustomSmallElevatedButton(
                                 icon: const Icon(Icons.near_me_outlined,size: 16,),
                                 title: '導航',
-                                color: AppColor.yellow,
+                                color: AppColor.primary,
                                 onPressed: (){
                                   // _launchMap(widget.theCase.onAddress!);
                                   MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
@@ -164,7 +164,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                             CustomSmallElevatedButton(
                                 icon: const Icon(Icons.call_outlined,size: 16,),
                                 title: '電話',
-                                color: AppColor.yellow,
+                                color: AppColor.primary,
                                 onPressed: (){
                                   Uri uri = Uri.parse("tel://${taskModel.cases.first.customerPhone}");
                                   launchUrl(uri);
@@ -203,7 +203,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.yellow, width: 1),
+                      border: Border.all(color: AppColor.primary, width: 1),
                       borderRadius: BorderRadius.circular(3)),
                   child:Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +230,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                             CustomSmallElevatedButton(
                                 icon: const Icon(Icons.near_me_outlined,size: 16,),
                                 title: '導航',
-                                color: AppColor.yellow,
+                                color: AppColor.primary,
                                 onPressed: (){
                                   // _launchMap(widget.theCase.onAddress!);
                                   MapsLauncher.launchQuery(taskModel.cases[1].onAddress!);
@@ -250,7 +250,7 @@ class _CurrentTaskState extends State<CurrentTask> {
                             CustomSmallElevatedButton(
                                 icon: const Icon(Icons.call_outlined,size: 16,),
                                 title: '電話',
-                                color: AppColor.yellow,
+                                color: AppColor.primary,
                                 onPressed: (){
                                   Uri uri = Uri.parse("tel://${taskModel.cases[1].customerPhone}");
                                   launchUrl(uri);

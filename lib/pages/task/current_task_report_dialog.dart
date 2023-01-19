@@ -27,7 +27,7 @@ class _CurrentTaskReportDialogState extends State<CurrentTaskReportDialog> {
       title: Container(
         width: 360,
         padding: const EdgeInsets.all(10),
-        color: AppColor.yellow,
+        color: AppColor.primary,
         child: const Text(
           '問題回報',
           style: TextStyle(color: Colors.white),
@@ -61,7 +61,7 @@ class _CurrentTaskReportDialogState extends State<CurrentTaskReportDialog> {
           ],
         ),
       ),
-      backgroundColor: AppColor.yellow,
+      backgroundColor: AppColor.primary,
       actions: <Widget>[
         OutlinedButton(
           child:const  Text('確認回報', style: TextStyle(color: Colors.white),),
