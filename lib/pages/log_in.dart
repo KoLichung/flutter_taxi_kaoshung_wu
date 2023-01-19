@@ -94,14 +94,22 @@ class _LogInState extends State<LogIn> {
       backgroundColor: Colors.black54,
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children:[
             Column(
-              children: const [
-                Icon(FontAwesomeIcons.taxi, color: Colors.white,size: 50,),
-                Text('24h派車',style: TextStyle(color: Colors.white,fontSize: 40,fontWeight: FontWeight.bold),),
+              children:  [
+                Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                        image:AssetImage('images/logo.png',),
+                        fit:BoxFit.scaleDown),),
+                  height: 65,
+                ),
+                // Icon(FontAwesomeIcons.taxi, color: Colors.white,size: 50,),
+                const Text('24h派車',style: TextStyle(color: Colors.white,fontSize: 40,fontWeight: FontWeight.bold),),
               ],
             ),
+            const SizedBox(height: 100,),
             Column(
               children: [
                 Container(

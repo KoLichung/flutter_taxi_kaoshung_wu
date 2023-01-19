@@ -88,10 +88,18 @@ class _HomePageState extends State<HomePage> {
         //         icon: const Icon(Icons.notifications_outlined)),)],
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(FontAwesomeIcons.taxi),
-            SizedBox(width: 10,),
-            Text('24h派車'),
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                    image:AssetImage('images/logo.png',),
+                    fit:BoxFit.scaleDown),),
+              height: 25,
+              width: 40,
+            ),
+            // Icon(FontAwesomeIcons.taxi),
+            const SizedBox(width: 10,),
+            const Text('24h派車'),
           ],
         ),
         bottom: PreferredSize(

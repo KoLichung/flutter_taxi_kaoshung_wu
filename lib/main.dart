@@ -137,9 +137,14 @@ class _MyHomePageState extends State<MyHomePage> {
               _selectedIndex = index;
             });
           },
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.taxi), label: '派車首頁'),
-            BottomNavigationBarItem(icon: Icon(Icons.person_outlined), label: '會員中心'),
+          items: <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+                backgroundColor: Colors.white,
+                icon: Image.asset('images/24h_tab_icon.png',height: 25,width: 40,),
+                activeIcon:Image.asset('images/24h_tab_icon_selected.png',height: 25,width: 40,),
+                label: "派車首頁"),
+            // BottomNavigationBarItem(icon: Icon(FontAwesomeIcons.taxi), label: '派車首頁'),
+            const BottomNavigationBarItem(icon: Icon(Icons.person_outlined), label: '會員中心'),
           ],
         ),
       ),
