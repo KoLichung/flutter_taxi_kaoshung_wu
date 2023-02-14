@@ -30,6 +30,7 @@ class _RegisterState extends State<Register> {
   final _formKey = GlobalKey<FormState>();
 
   TextEditingController driverNameController = TextEditingController();
+  TextEditingController nickNameController = TextEditingController();
   TextEditingController idLast5NumberController = TextEditingController();
   TextEditingController carPlateController = TextEditingController();
   TextEditingController phoneNumberController = TextEditingController();
@@ -54,6 +55,7 @@ class _RegisterState extends State<Register> {
       var userModel = context.read<UserModel>();
       User user = userModel.user;
       driverNameController.text = user.name!;
+      nickNameController.text = user.nickName!;
       idLast5NumberController.text = user.userId!;
       carPlateController.text = user.vehicalLicence!;
       phoneNumberController.text  = user.phone!;
@@ -100,19 +102,54 @@ class _RegisterState extends State<Register> {
               children: [
                 const SizedBox(height: 20,),
                 validatorTextFormField('*真實姓名','',driverNameController, false),
+                validatorTextFormField('*暱稱','',nickNameController, false),
                 validatorTextFormField('*手機號碼','',phoneNumberController, false),
                 validatorTextFormField('*密碼','',pwdController, true),
-                validatorTextFormField('*身份字號','',idNumberController, false),
-                validatorTextFormField('*台號(身分證後五碼)','',idLast5NumberController, false),
+                // validatorTextFormField('*身份字號','',idNumberController, false),
+                // validatorTextFormField('*台號(身分證後五碼)','',idLast5NumberController, false),
                 getDriverGender(),
+                const SizedBox(height: 10,),
                 validatorTextFormField('*車號(ABC-123)','',carPlateController, false),
-                getCarType(),
-                getCarCategory(),
-                registerTextField('車型','Toyota Wish',carModelController),
+                // getCarType(),
+                // getCarCategory(),
+                // registerTextField('車型','Toyota Wish',carModelController),
                 registerTextField('顏色','白',carColorController),
                 registerTextField('座位數','4',seatNumberController),
                 registerTextField('駕駛備註','車上不可飲食',carMemoController),
-
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text.rich(
+                          TextSpan(children: [
+                            TextSpan(text: '駕駛備註'),
+                            TextSpan(text: '  車上禁菸、檳榔', style: TextStyle(color: Colors.red))
+                          ])
+                      ),
+                      Container(
+                        margin: const  EdgeInsets.symmetric(vertical: 6),
+                        height: 46,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.black54,
+                            width: 1,),
+                          borderRadius: BorderRadius.circular(4),),
+                        child: TextField(
+                          style: const TextStyle(fontSize: 18),
+                          controller: carMemoController,
+                          decoration: InputDecoration(
+                            hintText: '車上不可飲食',
+                            hintStyle: TextStyle(color: Colors.grey.shade400),
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 13,vertical: 10),
+                            focusedBorder: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],),
+                ),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 30,vertical: 20),
                   child: CustomElevatedButton(
@@ -127,6 +164,7 @@ class _RegisterState extends State<Register> {
                           var userModel = context.read<UserModel>();
                           User user = userModel.user;
                           user.name = driverNameController.text;
+                          user.nickName = nickNameController.text;
                           user.phone = phoneNumberController.text;
                           user.userId = idLast5NumberController.text;
                           user.vehicalLicence = carPlateController.text;

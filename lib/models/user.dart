@@ -1,6 +1,7 @@
 class User {
   String? phone;
   String? name;
+  String? nickName;
   String? vehicalLicence;
   String? userId;
   String? idNumber;
@@ -18,6 +19,7 @@ class User {
   User(
       {this.phone,
         this.name,
+        this.nickName,
         this.vehicalLicence,
         this.userId,
         this.idNumber,
@@ -36,6 +38,7 @@ class User {
   User.fromJson(Map<String, dynamic> json) {
     phone = json['phone'];
     name = json['name'];
+    nickName = json['nickName'];
     vehicalLicence = json['vehicalLicence'];
     userId = json['userId'];
     idNumber = json['idNumber'];
@@ -63,6 +66,7 @@ class User {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['phone'] = this.phone;
     data['name'] = this.name;
+    data['nickName'] = this.nickName;
     data['vehicalLicence'] = this.vehicalLicence;
     data['userId'] = this.userId;
     data['idNumber'] = this.idNumber;
