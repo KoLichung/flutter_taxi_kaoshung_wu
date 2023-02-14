@@ -115,7 +115,6 @@ class _RegisterState extends State<Register> {
                 // registerTextField('車型','Toyota Wish',carModelController),
                 registerTextField('顏色','白',carColorController),
                 registerTextField('座位數','4',seatNumberController),
-                registerTextField('駕駛備註','車上不可飲食',carMemoController),
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
                   child: Column(
