@@ -510,6 +510,9 @@ class _HomePageState extends State<HomePage> {
       if(myCases.isEmpty && cases.isNotEmpty){
         _playLocalAsset();
       }
+
+      // add fake case here
+
       myCases = cases;
       setState(() {});
 

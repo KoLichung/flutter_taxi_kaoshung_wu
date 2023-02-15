@@ -24,6 +24,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
   Widget build(BuildContext context) {
     var userModel = context.read<UserModel>();
 
+    print(userModel.user);
+
     return Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(

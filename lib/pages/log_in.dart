@@ -252,6 +252,9 @@ class _LogInState extends State<LogIn> {
         var userModel = context.read<UserModel>();
         userModel.token = token;
         User? user = await _getUserData(token);
+
+        print(user.name);
+
         userModel.setUser(user!);
 
         // Navigator.push(
@@ -372,6 +375,8 @@ class _LogInState extends State<LogIn> {
         },
       );
 
+      _printLongString(response.body);
+
       Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
       // String phone = map['email'];
       // String name = map['name'];
@@ -390,6 +395,11 @@ class _LogInState extends State<LogIn> {
     //At the next line, DO NOT pass the entire reference such as assets/yes.mp3. This will not work.
     //Just pass the file name only.
     return await cache.play("ding_dong.mp3");
+  }
+
+  void _printLongString(String text) {
+    final RegExp pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((RegExpMatch match) =>   print(match.group(0)));
   }
 
 }
