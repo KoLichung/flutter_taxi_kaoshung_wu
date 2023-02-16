@@ -61,24 +61,37 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 36,vertical: 30),
         child:
-        (theCase != null )?
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                const CustomSmallOutlinedText(color: Colors.black87,title: '客戶',),
-                const SizedBox(width: 20,),
-                Text('距離 ${getDistance(theCase!, currentPosition!)}'),
-              ],
-            ),
-            const SizedBox(height: 10,),
-            Text(theCase!.onAddress!),
-          ],
-        )
-        :
-        Text('讀取中'),
+        (theCase != null )
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      const CustomSmallOutlinedText(color: Colors.black87,title: '客戶',),
+                      const SizedBox(width: 20,),
+                      Text('距離 ${getDistance(theCase!, currentPosition!)}'),
+                    ],
+                  ),
+                  const SizedBox(height: 10,),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Text('預計行車時間：'),
+                        Text('預估時間固定+ 120 秒'),
+                      ],),
+                  ),
+                  const SizedBox(height: 10,),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Text('上車位置：'),
+                        Text(theCase!.onAddress!),
+                      ],),
+                  ),
+                ],
+              )
+            : const Text('讀取中'),
       ),
       backgroundColor: AppColor.primary,
       actions: <Widget>[
@@ -122,7 +135,6 @@ class _NewPassengerDialogState extends State<NewPassengerDialog> {
                     }
                   }
                 }
-
               });
               print('in dialog $isTakingNewPassenger');
             },

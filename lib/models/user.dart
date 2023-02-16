@@ -38,7 +38,7 @@ class User {
   User.fromJson(Map<String, dynamic> json) {
     phone = json['phone'];
     name = json['name'];
-    nickName = json['nickName'];
+    nickName = json['nick_name'];
     vehicalLicence = json['vehicalLicence'];
     userId = json['userId'];
     idNumber = json['idNumber'];
@@ -66,7 +66,7 @@ class User {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['phone'] = this.phone;
     data['name'] = this.name;
-    data['nickName'] = this.nickName;
+    data['nick_name'] = this.nickName;
     data['vehicalLicence'] = this.vehicalLicence;
     data['userId'] = this.userId;
     data['idNumber'] = this.idNumber;

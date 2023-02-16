@@ -10,8 +10,7 @@ class CustomElevatedButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return
-      ElevatedButton(
+    return ElevatedButton(
           onPressed: () {
             onPressed();
           },

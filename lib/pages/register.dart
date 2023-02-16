@@ -21,8 +21,6 @@ class Register extends StatefulWidget {
 }
 
 enum DriverGender { male, female }
-enum CarType { car, suv, sport, van}
-enum CarCategory { taxi, various, rental, white }
 
 
 class _RegisterState extends State<Register> {
@@ -43,8 +41,6 @@ class _RegisterState extends State<Register> {
 
 
   DriverGender? _driverGender = DriverGender.male;
-  CarType? _carType = CarType.car;
-  CarCategory? _carCategory = CarCategory.taxi;
 
 
   @override
@@ -55,12 +51,18 @@ class _RegisterState extends State<Register> {
       var userModel = context.read<UserModel>();
       User user = userModel.user;
       driverNameController.text = user.name!;
-      nickNameController.text = user.nickName!;
-      idLast5NumberController.text = user.userId!;
+      if(user.nickName == '' || user.nickName == null){
+        nickNameController.text = '';
+      } else {
+        nickNameController.text = user.nickName!;
+      }
       carPlateController.text = user.vehicalLicence!;
       phoneNumberController.text  = user.phone!;
-      idNumberController.text = user.idNumber!;
-      carModelController.text = user.carModel!;
+      if(user.idNumber == '' || user.idNumber == null){
+        idNumberController.text = '';
+      } else {
+        idNumberController.text = user.idNumber!;
+      }
       carColorController.text = user.carColor!;
       seatNumberController.text = user.numberSites!.toString();
       carMemoController.text = user.carMemo!;
@@ -68,22 +70,8 @@ class _RegisterState extends State<Register> {
       if(user.gender == '女'){
         _driverGender = DriverGender.female;
       }
-      if(user.type == 'suv'){
-        _carType = CarType.suv;
-      }else if(user.type == 'sports_car'){
-        _carType = CarType.sport;
-      }else if(user.type == 'van'){
-        _carType = CarType.van;
-      }
-      if(user.category == 'diversity'){
-        _carCategory = CarCategory.various;
-      }else if(user.category == 'rental_car'){
-        _carCategory = CarCategory.rental;
-      }else if(user.category == 'x_card'){
-        _carCategory = CarCategory.white;
-      }
-    }
 
+    }
   }
 
   @override
@@ -105,14 +93,10 @@ class _RegisterState extends State<Register> {
                 validatorTextFormField('*暱稱','',nickNameController, false),
                 validatorTextFormField('*手機號碼','',phoneNumberController, false),
                 validatorTextFormField('*密碼','',pwdController, true),
-                // validatorTextFormField('*身份字號','',idNumberController, false),
-                // validatorTextFormField('*台號(身分證後五碼)','',idLast5NumberController, false),
+                registerTextField('身份證字號','',idNumberController),
                 getDriverGender(),
                 const SizedBox(height: 10,),
                 validatorTextFormField('*車號(ABC-123)','',carPlateController, false),
-                // getCarType(),
-                // getCarCategory(),
-                // registerTextField('車型','Toyota Wish',carModelController),
                 registerTextField('顏色','白',carColorController),
                 registerTextField('座位數','4',seatNumberController),
                 Container(
@@ -152,7 +136,7 @@ class _RegisterState extends State<Register> {
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 30,vertical: 20),
                   child: CustomElevatedButton(
-                    title: '儲存回到首頁',
+                    title: widget.isEdit ? '確認修改' : '確認註冊',
                     onPressed: (){
                         if (_formKey.currentState!.validate()) {
                           // ScaffoldMessenger.of(context).showSnackBar(
@@ -165,31 +149,12 @@ class _RegisterState extends State<Register> {
                           user.name = driverNameController.text;
                           user.nickName = nickNameController.text;
                           user.phone = phoneNumberController.text;
-                          user.userId = idLast5NumberController.text;
                           user.vehicalLicence = carPlateController.text;
                           user.idNumber = idNumberController.text;
                           if(_driverGender == DriverGender.male){
                             user.gender = '男';
                           }else{
                             user.gender = '女';
-                          }
-                          if(_carType == CarType.car){
-                            user.type = 'car';
-                          }else if(_carType == CarType.suv){
-                            user.type = 'suv';
-                          }else if(_carType == CarType.sport){
-                            user.type = 'sports_car';
-                          }else if(_carType == CarType.van){
-                            user.type = 'van';
-                          }
-                          if(_carCategory == CarCategory.taxi){
-                            user.category = 'taxi';
-                          }else if(_carCategory == CarCategory.various){
-                            user.category = 'diversity';
-                          }else if(_carCategory == CarCategory.rental){
-                            user.category = 'rental_car';
-                          }else if(_carCategory == CarCategory.white){
-                            user.category = 'x_card';
                           }
                           user.carModel = carModelController.text;
                           user.carColor = carColorController.text;
@@ -198,9 +163,13 @@ class _RegisterState extends State<Register> {
                           }else{
                             user.numberSites = 4;
                           }
-                          user.carMemo = carMemoController.text;
-
-
+                          // user.carMemo = carMemoController.text;
+                          String userCarMemo = carMemoController.text;
+                          if(userCarMemo.contains('車上禁菸、檳榔')){
+                            user.carMemo = carMemoController.text;
+                          } else {
+                            user.carMemo = '車上禁菸、檳榔 ' + carMemoController.text;
+                          }
 
                           if(widget.isEdit) {
                             _putUpdateUserData(userModel.token!, user, user.isOnline!);
@@ -209,14 +178,13 @@ class _RegisterState extends State<Register> {
                             _postCreateUser(user, phoneNumberController.text, pwdController.text);
                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('註冊中，請稍待~')));
                           }
-
-
                           // Navigator.pushAndRemoveUntil(
                           //   context,
                           //   MaterialPageRoute(builder: (context) => const MyHomePage()), (Route<dynamic> route) => false, );
                         }},
                   ),
                 ),
+                widget.isEdit ? const SizedBox() : TextButton(onPressed: (){ Navigator.pop(context);}, child: const Text('返回上一頁',)),
                 const SizedBox(height: 250)
               ],
             ),
@@ -344,166 +312,8 @@ class _RegisterState extends State<Register> {
     );
   }
 
-  getCarType(){
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('車種',style: TextStyle(height: 1.8),),
-          Row(
-            children: [
-              Radio<CarType>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarType.car,
-                groupValue: _carType,
-                onChanged: (CarType? value){
-                  setState(() {
-                    _carType = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('轎車'),
-              const SizedBox(width: 10,),
-              Radio<CarType>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarType.suv,
-                groupValue: _carType,
-                onChanged: (CarType? value){
-                  setState(() {
-                    _carType = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('休旅車'),
-              const SizedBox(width: 10,),
-              Radio<CarType>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarType.sport,
-                groupValue: _carType,
-                onChanged: (CarType? value){
-                  setState(() {
-                    _carType = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('跑車'),
-              const SizedBox(width: 10,),
-              Radio<CarType>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarType.van,
-                groupValue: _carType,
-                onChanged: (CarType? value){
-                  setState(() {
-                    _carType = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('箱型車')
-            ],
-          ),
-        ],),
-    );
-  }
-
-  getCarCategory(){
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('類別',style: TextStyle(height: 1.8),),
-          Row(
-            children: [
-              Radio<CarCategory>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarCategory.taxi,
-                groupValue: _carCategory,
-                onChanged: (CarCategory? value){
-                  setState(() {
-                    _carCategory = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('計程車'),
-              const SizedBox(width: 10,),
-              Radio<CarCategory>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarCategory.various,
-                groupValue: _carCategory,
-                onChanged: (CarCategory? value){
-                  setState(() {
-                    _carCategory = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('多元'),
-              const SizedBox(width: 10,),
-              Radio<CarCategory>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarCategory.rental,
-                groupValue: _carCategory,
-                onChanged: (CarCategory? value){
-                  setState(() {
-                    _carCategory = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('租賃車'),
-              const SizedBox(width: 10,),
-              Radio<CarCategory>(
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(
-                  horizontal: VisualDensity.minimumDensity,
-                ),
-                value: CarCategory.white,
-                groupValue: _carCategory,
-                onChanged: (CarCategory? value){
-                  setState(() {
-                    _carCategory = value;
-                  });
-                },
-                activeColor: Colors.black54,
-              ),
-              const Text('X牌')
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Future _putUpdateUserData(String token, User user, bool isOnline) async {
     String path = ServerApi.PATH_USER_DATA;
-
     print(token);
     print(user.phone);
 
@@ -511,13 +321,10 @@ class _RegisterState extends State<Register> {
       Map queryParameters = {
         'phone': user.phone,
         'name': user.name,
+        'nick_name':user.nickName,
         'vehicalLicence': user.vehicalLicence,
-        'userId': user.userId,
         'idNumber': user.idNumber,
         'gender': user.gender,
-        'type': user.type,
-        'category': user.category,
-        'car_model': user.carModel,
         'car_color': user.carColor,
         'number_sites': user.numberSites,
         'is_online': isOnline,
@@ -532,6 +339,14 @@ class _RegisterState extends State<Register> {
           },
           body: jsonEncode(queryParameters)
       );
+      print(response.body);
+
+
+      if(response.statusCode == 200){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('資料更新成功~')));
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('資料更新失敗!')));
+      }
 
       Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
       User theUser = User.fromJson(map);
@@ -555,13 +370,10 @@ class _RegisterState extends State<Register> {
       Map queryParameters = {
         'phone': user.phone,
         'name': user.name,
+        'nick_name': user.nickName,
         'vehicalLicence': user.vehicalLicence,
-        'userId': user.userId,
         'idNumber': user.idNumber,
         'gender': user.gender,
-        'type': user.type,
-        'category': user.category,
-        'car_model': user.carModel,
         'car_color': user.carColor,
         'number_sites': user.numberSites,
         // 'line_id': lineId,

@@ -35,7 +35,9 @@ class _HomePageState extends State<HomePage> {
 
   Timer? _timer;
   int timerPeriod = 3;
+
   late List<Case> myCases = <Case>[];
+
 
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.best,
@@ -47,7 +49,6 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _handlePermission();
     _getLatestAppVersion();
-
     var userModel = context.read<UserModel>();
 
     if(userModel.currentAppVersion == null){
@@ -103,9 +104,9 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70.0),
+          preferredSize: const Size.fromHeight(105.0),
           child: Container(
-              height: 70,
+              height: 105,
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
@@ -113,25 +114,30 @@ class _HomePageState extends State<HomePage> {
                 )
               ),
               child: Consumer<UserModel>(builder: (context, userModel, child) =>
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Column(
                     children: [
-                      const Text('我的狀態：'),
-                      userModel.isOnline? const Text('上線中') : const Text('休息中'),
-                      const SizedBox(width: 10,),
+                      const SizedBox(height: 10,),
                       userModel.isOnline? statusOnlineButton() : statusOfflineButton(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('我的狀態：'),
+                          userModel.isOnline? const Text('上線中') : const Text('休息中'),
+                          const SizedBox(width: 10,),
+                          const Text('目前餘額：'),
+                          Text(userModel.user.leftMoney.toString()),
+                        ],
+                      ),
                     ],
                   ),
               ),
           )
-
         ),
       ),
       body: Consumer<UserModel>(builder: (context, userModel, child) =>
         userModel.isOnline? checkIsTasks() : offlineScene(),
       ),
-
-      );
+    );
   }
 
   statusOnlineButton(){
@@ -164,6 +170,7 @@ class _HomePageState extends State<HomePage> {
         style: ElevatedButton.styleFrom(primary: AppColor.green,elevation: 0),
         child: const Text('點我上線'),
         onPressed: () async {
+
           if(_isOnlining == true){
             ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('正在上線中~~')));
           }else{
@@ -296,20 +303,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             const SizedBox(height: 50),
-            // Column(
-            //   children: [
-            //     const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
-            //     Container(
-            //       margin: EdgeInsets.only(bottom: 10),
-            //       height: 260,
-            //       decoration: const BoxDecoration(
-            //         image: DecorationImage(
-            //             image:AssetImage('images/services.png',),
-            //             fit:BoxFit.fitHeight),),
-            //     ),
-            //   ],
-            // ),
-            // ourServiceList()
           ],
         ),
       ),
@@ -346,9 +339,10 @@ class _HomePageState extends State<HomePage> {
                       ),
                       if(currentPosition!=null)Text('距離 ${getDistance(myCases[i], currentPosition)}'),
                     ],),
-                    Text('上車：${myCases[i].onAddress}'),
-                    (myCases[i].offAddress!="")?Text('下車：${myCases[i].offAddress}'):Container(),
-                    (myCases[i].memo!="")?Text('備註：${myCases[i].memo}'):Container(),
+                    Text('預計行車時間：預估時間 +120 秒'),
+                    Text('上車地：${myCases[i].onAddress}'),
+                    (myCases[i].offAddress!="")?Text('下車地：${myCases[i].offAddress}'):Container(),
+                    // (myCases[i].memo!="")?Text('備註：${myCases[i].memo}'):Container(),
                     const SizedBox(height: 10,),
                     CustomElevatedButton(
                         onPressed: (){
@@ -385,20 +379,7 @@ class _HomePageState extends State<HomePage> {
                 Text('您現在休息中~'),
               ],),
             const SizedBox(height: 50),
-            // Column(
-            //   children: [
-            //     const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
-            //     Container(
-            //       margin: EdgeInsets.only(bottom: 10),
-            //       height: 260,
-            //       decoration: const BoxDecoration(
-            //         image: DecorationImage(
-            //             image:AssetImage('images/services.png',),
-            //             fit:BoxFit.fitHeight),),
-            //     ),
-            //   ],
-            // ),
-            // ourServiceList()
+
           ],
         ),
       ),
@@ -512,8 +493,23 @@ class _HomePageState extends State<HomePage> {
       }
 
       // add fake case here
+      cases =[
+        Case(
+          customerName:'customerName',
+          customerPhone:'customerPhone',
+          onLat:'22.639492',
+          onLng:'120.302583',
+          onAddress:'台北火車站',
+          offLat:'24.081624',
+          offLng:'120.538378',
+          offAddress:'公館捷運站',
+          caseMoney:null,
+          memo:'無',
+          shipState:'正承接',),
+      ];
 
       myCases = cases;
+
       setState(() {});
 
     } catch (e) {
@@ -526,50 +522,54 @@ class _HomePageState extends State<HomePage> {
 
     String path = ServerApi.PATH_CASE_CONFIREM;
 
-    try {
+    var taskModel = context.read<TaskModel>();
+    taskModel.cases.add(theCase);
+    await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
 
-      final queryParameters = {
-        'case_id': theCase.id!.toString(),
-      };
-
-      final response = await http.put(
-          ServerApi.standard(path: path, queryParameters: queryParameters),
-          headers: <String, String>{
-            'Content-Type': 'application/json; charset=UTF-8',
-            'Authorization': 'Token $token',
-          },
-      );
-
-      // print(response.body);
-      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
-      if(map['message']=='ok'){
-        if(_timer!=null){
-          print('cancel timer');
-          _timer!.cancel();
-          _timer = null;
-        }
-
-        var taskModel = context.read<TaskModel>();
-        taskModel.cases.add(theCase);
-        await Navigator.push(context, MaterialPageRoute(builder: (context) => CurrentTask()));
-
-        var userModel = context.read<UserModel>();
-        if (userModel.isOnline && _timer == null){
-          print('start timer');
-          _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
-            _fetchCases(userModel.token!);
-          });
-        }
-
-      }else{
-        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
-      }
-      setState(() {});
-    } catch (e) {
-      print(e);
-      ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
-      // return "error";
-    }
+    // try {
+    //   final queryParameters = {
+    //     'case_id': theCase.id!.toString(),
+    //   };
+    //
+    //   final response = await http.put(
+    //       ServerApi.standard(path: path, queryParameters: queryParameters),
+    //       headers: <String, String>{
+    //         'Content-Type': 'application/json; charset=UTF-8',
+    //         'Authorization': 'Token $token',
+    //       },
+    //   );
+    //
+    //   // print(response.body);
+    //   Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+    //
+    //   if(map['message']=='ok'){
+    //     if(_timer!=null){
+    //       print('cancel timer');
+    //       _timer!.cancel();
+    //       _timer = null;
+    //     }
+    //
+    //     var taskModel = context.read<TaskModel>();
+    //     taskModel.cases.add(theCase);
+    //     await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
+    //
+    //     var userModel = context.read<UserModel>();
+    //     if (userModel.isOnline && _timer == null){
+    //       print('start timer');
+    //       _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
+    //         _fetchCases(userModel.token!);
+    //       });
+    //     }
+    //   }else{
+    //     ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+    //   }
+    //
+    //   setState(() {});
+    // } catch (e) {
+    //   print(e);
+    //   ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+    //   // return "error";
+    // }
   }
 
   Future _putUpdateOnlineState(String token, bool isOnline) async{
@@ -743,47 +743,6 @@ class _HomePageState extends State<HomePage> {
       print(e);
     }
   }
-
-  // ourServiceList(){
-  //   return Column(
-  //     children: [
-  //       const Text('以下為我們的服務項目\n了解詳細內容請加入官網',textAlign: TextAlign.center,),
-  //       const Divider(height: 20,indent: 60,endIndent: 60,thickness: 1,color: Colors.black87,),
-  //       Row(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children:[
-  //             serviceUnits('立刻叫車', FontAwesomeIcons.taxi ),
-  //             serviceUnits('預約用車', FontAwesomeIcons.book),
-  //             serviceUnits('酒後代駕', FontAwesomeIcons.glassCheers),
-  //           ]),
-  //       Row(
-  //           mainAxisAlignment: MainAxisAlignment.center,
-  //           children:[
-  //             serviceUnits('接電服務', FontAwesomeIcons.carBattery ),
-  //             serviceUnits('取餐宅配', FontAwesomeIcons.hamburger),
-  //             serviceUnits('微型搬家', FontAwesomeIcons.box),
-  //           ]
-  //       ),
-  //       const SizedBox(height: 20,),
-  //     ],
-  //   );
-  // }
-  //
-  // serviceUnits(String title,IconData icon){
-  //   return Column(children: [
-  //     Text(title,style:const TextStyle(color: AppColor.blue,fontWeight: FontWeight.bold, fontSize: 18),),
-  //     Container(
-  //       margin: const EdgeInsets.fromLTRB(10,5,10,5),
-  //       padding: const EdgeInsets.all(18),
-  //       decoration: BoxDecoration(
-  //           border: Border.all(
-  //               width: 2,
-  //               color: AppColor.blue),
-  //           borderRadius: BorderRadius.circular(5)),
-  //       child: Icon(icon,color: AppColor.blue,size: 40,),
-  //     )
-  //   ],);
-  // }
 
 }
 
