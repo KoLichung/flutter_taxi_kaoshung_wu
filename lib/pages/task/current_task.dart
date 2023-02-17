@@ -145,16 +145,6 @@ class _CurrentTaskState extends State<CurrentTask> {
                                 onPressed: ()async{
 
                                   bool isGoogleMaps = await MapLauncher.isMapAvailable(MapType.google) ?? false;
-                                  bool isAppleMaps = await MapLauncher.isMapAvailable(MapType.apple) ?? false;
-
-                                  // if (isGoogleMaps == true) {
-                                  //   await MapLauncher.showDirections(
-                                  //     mapType: MapType.google,
-                                  //     directionsMode: DirectionsMode.driving,
-                                  //     destinationTitle: taskModel.cases.first.onAddress!,
-                                  //     destination: Coords(25.033582,121.501609) ,
-                                  //   );
-                                  // }
 
                                   try{
                                     if (isGoogleMaps == true) {
@@ -171,13 +161,12 @@ class _CurrentTaskState extends State<CurrentTask> {
                                         destinationTitle: taskModel.cases.first.onAddress!,
                                         destination: Coords(25.033582,121.501609) ,
                                       );
-                                      // MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
+
                                     }
                                   }catch(e){
                                     print(e);
                                   }
-
-                                  // MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
+                                  MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
                                 })
                           ],
                         ),
