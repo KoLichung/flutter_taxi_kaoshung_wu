@@ -38,11 +38,32 @@ class _HomePageState extends State<HomePage> {
 
   late List<Case> myCases = <Case>[];
 
-
   final LocationSettings locationSettings = const LocationSettings(
     accuracy: LocationAccuracy.best,
     distanceFilter: 10,
   );
+
+  Timer? _taskTimer;
+  int _taskWaitingTime = 15;
+
+  void startTaskTimer() {
+    const oneSec = Duration(seconds: 1);
+    _taskTimer = Timer.periodic(
+      oneSec,
+          (Timer timer) {
+        if (_taskWaitingTime == 0) {
+          setState(() {
+            timer.cancel();
+          });
+        } else {
+          setState(() {
+            _taskWaitingTime--;
+          });
+        }
+      },
+    );
+  }
+
 
   @override
   void initState() {
@@ -64,6 +85,7 @@ class _HomePageState extends State<HomePage> {
           _fetchCases(userModel.token!);
         });
     }
+
   }
 
   @override
@@ -74,6 +96,8 @@ class _HomePageState extends State<HomePage> {
       _timer!.cancel();
       _timer = null;
     }
+    _taskTimer?.cancel();
+    _taskTimer = null;
   }
 
   @override
@@ -311,6 +335,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   getTaskList(Position currentPosition){
+    startTaskTimer();
     return
         ListView.builder(
             scrollDirection: Axis.vertical,
@@ -326,7 +351,8 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('空派任務：${myCases[i].shipState!}'),
+                    // Text('空派任務：${myCases[i].shipState!}'),
+                    Center(child: Text('倒數：$_taskWaitingTime 秒')),
                     Row(children: [
                       Container(
                         margin:const EdgeInsets.fromLTRB(0,4,8,0),
