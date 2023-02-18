@@ -493,20 +493,20 @@ class _HomePageState extends State<HomePage> {
       }
 
       // add fake case here
-      // cases =[
-      //   Case(
-      //     customerName:'customerName',
-      //     customerPhone:'customerPhone',
-      //     onLat:'22.639492',
-      //     onLng:'120.302583',
-      //     onAddress:'台北火車站',
-      //     offLat:'24.081624',
-      //     offLng:'120.538378',
-      //     offAddress:'公館捷運站',
-      //     caseMoney:null,
-      //     memo:'無',
-      //     shipState:'正承接',),
-      // ];
+      cases =[
+        Case(
+          customerName:'customerName',
+          customerPhone:'customerPhone',
+          onLat:'22.639492',
+          onLng:'120.302583',
+          onAddress:'台北火車站',
+          offLat:'24.081624',
+          offLng:'120.538378',
+          offAddress:'公館捷運站',
+          caseMoney:null,
+          memo:'無',
+          shipState:'正承接',),
+      ];
 
       myCases = cases;
 
