@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import '../config/serverApi.dart';
+import '../models/car_team.dart';
 import '../models/user.dart';
 import '../notifier_models/user_model.dart';
 import '../widgets/custom_elevated_button.dart';
@@ -22,7 +23,6 @@ class Register extends StatefulWidget {
 
 enum DriverGender { male, female }
 
-
 class _RegisterState extends State<Register> {
 
   final _formKey = GlobalKey<FormState>();
@@ -41,6 +41,11 @@ class _RegisterState extends State<Register> {
 
 
   DriverGender? _driverGender = DriverGender.male;
+
+  List<CarTeam> carTeams=[];
+  List<String> carTeamsString =[];
+  String dropdownValue = '';
+
 
 
   @override
@@ -72,6 +77,8 @@ class _RegisterState extends State<Register> {
       }
 
     }
+    getCarTeams();
+
   }
 
   @override
@@ -88,6 +95,43 @@ class _RegisterState extends State<Register> {
             key: _formKey,
             child: Column(
               children: [
+                const SizedBox(height: 20,),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text('選擇車隊'),
+                      const SizedBox(width: 15,),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: Colors.black54,
+                            width: 1,
+                          ),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            isDense: true,
+                            value: dropdownValue,
+                            items: carTeamsString.map<DropdownMenuItem<String>>((String value){
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child:Text(value),
+                              );
+                            }).toList(),
+                            onChanged: (String? value) {
+                              setState(() {
+                                dropdownValue = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      )
+                    ],),
+                ),
                 const SizedBox(height: 20,),
                 validatorTextFormField('*真實姓名','',driverNameController, false),
                 validatorTextFormField('*暱稱','',nickNameController, false),
@@ -478,6 +522,30 @@ class _RegisterState extends State<Register> {
 
     }
     return null;
+  }
+
+  Future getCarTeams() async{
+    String path = ServerApi.PATH_CAR_TEAMS;
+    try {
+      final response = await http.get(ServerApi.standard(
+        path: path,
+      ));
+
+      if (response.statusCode == 200) {
+        List<dynamic> parsedListJson = json.decode(utf8.decode(response.body.runes.toList()));
+        setState(() {
+          carTeams = List<CarTeam>.from(parsedListJson.map((i) => CarTeam.fromJson(i)));
+
+          for(var carTeam in carTeams){
+            carTeamsString.add(carTeam.name!);
+          }
+          dropdownValue = carTeamsString.first;
+
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
   }
 }
 
