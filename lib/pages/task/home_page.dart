@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> {
     if(userModel.deviceId==null){
       _getDeviceInfo();
     }
-    if(userModel.isOnline && userModel.user.isPassed!){
+    if(userModel.isOnline && userModel.user!.isPassed!){
         print('start timer');
         _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
           // print('Hello world, timer: $timer.tick');
@@ -149,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                           userModel.isOnline? const Text('上線中') : const Text('休息中'),
                           const SizedBox(width: 10,),
                           const Text('目前餘額：'),
-                          Text(userModel.user.leftMoney.toString()),
+                          Text(userModel.user!.leftMoney.toString()),
                         ],
                       ),
                     ],
@@ -205,7 +205,7 @@ class _HomePageState extends State<HomePage> {
             var taskModel = context.read<TaskModel>();
             //make sure update location when online
 
-            if(userModel.user.isPassed!) {
+            if(userModel.user!.isPassed!) {
               _putUpdateOnlineState(userModel.token!, true);
               print('start timer');
               _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
@@ -304,8 +304,8 @@ class _HomePageState extends State<HomePage> {
 
   checkIsTasks(){
     var userModel = context.read<UserModel>();
-    if (myCases.isEmpty || !userModel.user.isPassed!){
-      return onCallScene(userModel.user.isPassed!);
+    if (myCases.isEmpty || !userModel.user!.isPassed!){
+      return onCallScene(userModel.user!.isPassed!);
     } else {
       return getTaskList(userModel.currentPosition!);
     }

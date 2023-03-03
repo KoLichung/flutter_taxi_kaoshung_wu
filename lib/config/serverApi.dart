@@ -4,6 +4,7 @@ class ServerApi{
   static const PATH_CREATE_USER = '/api/user/create/';
   static const PATH_USER_TOKEN = '/api/user/token/';
   static const PATH_USER_DATA = '/api/user/me/';
+  static const PATH_DELETE_USER = '/api/user/deleteuser/';
   static const PATH_USER_LEFT_MONEY = '/api/user/left_money/';
   static const PATH_REGISTER_DEVICE = "/fcm/device_register";
 

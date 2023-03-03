@@ -54,7 +54,7 @@ class _RegisterState extends State<Register> {
     super.initState();
     if(widget.isEdit){
       var userModel = context.read<UserModel>();
-      User user = userModel.user;
+      User user = userModel.user!;
       driverNameController.text = user.name!;
       if(user.nickName == '' || user.nickName == null){
         nickNameController.text = '';
@@ -189,7 +189,7 @@ class _RegisterState extends State<Register> {
                           //       content: Text('資料填寫成功')),
                           // );
                           var userModel = context.read<UserModel>();
-                          User user = userModel.user;
+                          User user = userModel.user!;
                           user.name = driverNameController.text;
                           user.nickName = nickNameController.text;
                           user.phone = phoneNumberController.text;
