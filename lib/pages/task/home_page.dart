@@ -49,8 +49,7 @@ class _HomePageState extends State<HomePage> {
   void startTaskTimer() {
     const oneSec = Duration(seconds: 1);
     _taskTimer = Timer.periodic(
-      oneSec,
-          (Timer timer) {
+      oneSec, (Timer timer) {
         if (_taskWaitingTime == 0) {
           setState(() {
             timer.cancel();
@@ -502,7 +501,7 @@ class _HomePageState extends State<HomePage> {
 
   Future _fetchCases(String token) async {
     String path = ServerApi.PATH_GET_CASES;
-
+    print(token);
     try {
       final response = await http.get(
         ServerApi.standard(path: path),
@@ -519,24 +518,25 @@ class _HomePageState extends State<HomePage> {
       }
 
       // add fake case here
-      cases =[
-        Case(
-          customerName:'customerName',
-          customerPhone:'customerPhone',
-          onLat:'22.639492',
-          onLng:'120.302583',
-          onAddress:'台北火車站',
-          offLat:'24.081624',
-          offLng:'120.538378',
-          offAddress:'公館捷運站',
-          caseMoney:null,
-          memo:'無',
-          shipState:'正承接',),
-      ];
+      // cases =[
+      //   Case(
+      //     customerName:'customerName',
+      //     customerPhone:'customerPhone',
+      //     onLat:'22.639492',
+      //     onLng:'120.302583',
+      //     onAddress:'台北火車站',
+      //     offLat:'24.081624',
+      //     offLng:'120.538378',
+      //     offAddress:'公館捷運站',
+      //     caseMoney:null,
+      //     memo:'無',
+      //     shipState:'正承接',),
+      // ];
 
       myCases = cases;
 
-
+      // 如果 case 取消 或 秒數不一?, 在 setState 就好,
+      // 回傳時, 應該也要回傳秒數
       setState(() {});
 
     } catch (e) {
