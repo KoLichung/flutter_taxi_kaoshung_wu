@@ -4,6 +4,8 @@ import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_taxi_chinghsien/config/serverApi.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import '../../color.dart';
+import '../../models/user.dart';
 import '../../notifier_models/user_model.dart';
 import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/custom_member_button.dart';
@@ -62,7 +64,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 Row(
                   children: [
                     const Text('姓名：', style: TextStyle(fontSize: 18),),
-                    Text(userModel.user.name!, style: const TextStyle(fontSize: 18),),
+                    Text(userModel.user!.name!, style: const TextStyle(fontSize: 18),),
                 ],),
               ),
               Padding(
@@ -70,7 +72,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 child: Row(
                   children: [
                     const Text('狀態：', style: TextStyle(fontSize: 18),),
-                    (userModel.user.isPassed!)
+                    (userModel.user!.isPassed!)
                         ? const Text('登入中', style: TextStyle(fontSize: 18))
                         : const Text('登入中(尚未通過審核)', style: TextStyle(fontSize: 18)),
                   ]
@@ -97,7 +99,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                 },
               ),
               Container(
-                margin: const EdgeInsets.symmetric(horizontal: 30,vertical: 20),
+                margin: const EdgeInsets.fromLTRB(30,20,30,0),
                 child: CustomElevatedButton(
                   title: '登出',
                   onPressed: () async {
@@ -118,7 +120,32 @@ class _MyAccountPageState extends State<MyAccountPage> {
                   },
                 ),
               ),
-              const SizedBox(height: 20,)
+              Container(
+                  margin: const EdgeInsets.fromLTRB(30,20,30,0),
+                  child: ElevatedButton(
+                      onPressed: () async {
+                        final confirmBack = await _showDeleteDialog(context);
+                        if(confirmBack){
+                          print('here');
+                          var userModel = context.read<UserModel>();
+                          print(userModel.user!.id);
+                          _deleteUserData(userModel.token!, userModel.user!.id!);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColor.red,
+                          elevation: 0
+                      ),
+                      child: const SizedBox(
+                        height: 46,
+                        child: Align(
+                          child: Text('刪除帳號',style: TextStyle(fontSize: 20),),
+                          alignment: Alignment.center,
+                        ),
+                      )
+                  )
+              ),
+              const SizedBox(height: 20,),
             ],
           ),
         ));
@@ -159,6 +186,72 @@ class _MyAccountPageState extends State<MyAccountPage> {
       print(e);
       return "error";
     }
+  }
+
+  Future _showDeleteDialog(BuildContext context) {
+    AlertDialog dialog = AlertDialog(
+      title: const Text("提醒您～！"),
+      content: const Text('用戶刪除後，無法取回用戶資料！'),
+      actions: [
+        ElevatedButton(
+            child: const Text("取消"),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColor.primary,
+                elevation: 0
+            ),
+            onPressed: () {
+              Navigator.pop(context, false);
+            }
+        ),
+        ElevatedButton(
+            child: Text("確認刪除"),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColor.red,
+                elevation: 0
+            ),
+            onPressed: () {
+              Navigator.pop(context, true);
+            }
+        ),
+      ],
+    );
+
+    // Show the dialog
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return dialog;
+        }
+    );
+  }
+
+  Future<User?> _deleteUserData(String token,int userId) async {
+    String path = ServerApi.PATH_DELETE_USER+userId.toString()+'/';
+
+    try {
+      final response = await http.delete(
+        ServerApi.standard(path: path),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Token $token',
+        },
+      );
+
+      print(response.body);
+
+      if(response.body.contains('continuous order exists')){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("有訂單尚未完成！無法刪除！"),));
+      }
+      if(response.body.contains('delete user')){
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("成功刪除使用者!"),));
+        var userModel = context.read<UserModel>();
+        userModel.removeUser(context);
+      }
+
+    } catch (e) {
+      print(e);
+    }
+    return null;
   }
 
 

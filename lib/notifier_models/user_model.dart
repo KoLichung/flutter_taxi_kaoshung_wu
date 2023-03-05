@@ -9,8 +9,10 @@ class UserModel extends ChangeNotifier {
   int positionUpdateCount = 0;
   DateTime? lastUpdateLocationTime;
 
-  User _user = User();
-  User get user => _user;
+  // User _user = User();
+  // User get user => _user;
+  User? _user;
+  User? get user => _user;
   String? token;
   StreamSubscription<Position>? positionStreamSubscription;
 

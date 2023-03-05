@@ -1,4 +1,5 @@
 class User {
+  int? id;
   String? phone;
   String? name;
   String? nickName;
@@ -17,7 +18,8 @@ class User {
   bool? isPassed;
 
   User(
-      {this.phone,
+      {this.id,
+        this.phone,
         this.name,
         this.nickName,
         this.vehicalLicence,
@@ -36,6 +38,7 @@ class User {
       });
 
   User.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
     phone = json['phone'];
     name = json['name'];
     nickName = json['nick_name'];
@@ -64,6 +67,7 @@ class User {
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['id'] = this.id;
     data['phone'] = this.phone;
     data['name'] = this.name;
     data['nick_name'] = this.nickName;
