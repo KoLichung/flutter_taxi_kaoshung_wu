@@ -53,258 +53,251 @@ class _CurrentTaskState extends State<CurrentTask> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                    image:AssetImage('images/logo.png',),
-                    fit:BoxFit.scaleDown),),
-              height: 25,
-              width: 40,
+    return WillPopScope(
+        onWillPop: () async => false,
+        child: Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                        image:AssetImage('images/logo.png',),
+                        fit:BoxFit.scaleDown),),
+                  height: 25,
+                  width: 40,
+                ),
+                // Icon(FontAwesomeIcons.taxi),
+                const SizedBox(width: 10,),
+                const Text('24h派車'),
+              ],
             ),
-            // Icon(FontAwesomeIcons.taxi),
-            const SizedBox(width: 10,),
-            const Text('24h派車'),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        child:Consumer<TaskModel>(builder: (context, taskModel, child){
+          ),
+          body: SingleChildScrollView(
+            child:Consumer<TaskModel>(builder: (context, taskModel, child){
 
-          // checkAvailableAndShow() async {
-          //   bool isGoogleMaps =
-          //       await MapLauncher.isMapAvailable(MapType.google) ?? false;
-          //
-          //   if (isGoogleMaps) {
-          //     await MapLauncher.showDirections(
-          //       mapType: MapType.google,
-          //       directionsMode: DirectionsMode.driving,
-          //       destinationTitle: taskModel.cases.first.onAddress!,
-          //       destination: Coords(25.033582,121.501609) ,
-          //     );
-          //   }
-          // }
-          return Column(
-            children: [
-              // current task
-              Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.primary, width: 1),
-                      borderRadius: BorderRadius.circular(3)),
-                  child:Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // checkAvailableAndShow() async {
+              //   bool isGoogleMaps =
+              //       await MapLauncher.isMapAvailable(MapType.google) ?? false;
+              //
+              //   if (isGoogleMaps) {
+              //     await MapLauncher.showDirections(
+              //       mapType: MapType.google,
+              //       directionsMode: DirectionsMode.driving,
+              //       destinationTitle: taskModel.cases.first.onAddress!,
+              //       destination: Coords(25.033582,121.501609) ,
+              //     );
+              //   }
+              // }
+              return Column(
+                children: [
+                  // current task
+                  Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          border: Border.all(color: AppColor.primary, width: 1),
+                          borderRadius: BorderRadius.circular(3)),
+                      child:Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          RichText(
-                            text: TextSpan(
-                              text: '目前任務：',
-                              style: const TextStyle(color: Colors.black87, fontSize: 18,),
-                              children: <TextSpan>[
-                                TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  text: '目前任務：',
+                                  style: const TextStyle(color: Colors.black87, fontSize: 18,),
+                                  children: <TextSpan>[
+                                    TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                              // GestureDetector(
+                              //   child: const CustomSmallOutlinedText(
+                              //       title: '問題回報',
+                              //       color: AppColor.primary),
+                              //   onTap: () async {
+                              //     var data = await showDialog<String>(
+                              //         context: context,
+                              //         builder: (BuildContext context) {
+                              //           return CurrentTaskReportDialog();
+                              //         });
+                              //     if(data.toString()!=""){
+                              //       print(userToken!);
+                              //       print(data.toString());
+                              //       _putCaseCanceled(userToken!, data.toString(), taskModel.cases.first.id!);
+                              //     }else{
+                              //       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('問題回報不可為空白！')));
+                              //     }
+                              //   },),
+                            ],
+                          ),
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(0,10,0,0),
+                            child: Row(
+                              children: [
+                                const Text('上車地：'),
+                                CustomSmallElevatedButton(
+                                    icon: const Icon(Icons.near_me_outlined,size: 16,),
+                                    title: '導航',
+                                    color: AppColor.primary,
+                                    onPressed: ()async{
+
+                                      bool isGoogleMaps = await MapLauncher.isMapAvailable(MapType.google) ?? false;
+
+                                      try{
+                                        if (isGoogleMaps == true) {
+                                          await MapLauncher.showDirections(
+                                            mapType: MapType.google,
+                                            directionsMode: DirectionsMode.driving,
+                                            destinationTitle: taskModel.cases.first.onAddress!,
+                                            destination: Coords(25.033582,121.501609) ,
+                                          );
+                                        } else {
+                                          await MapLauncher.showDirections(
+                                            mapType: MapType.apple,
+                                            directionsMode: DirectionsMode.driving,
+                                            destinationTitle: taskModel.cases.first.onAddress!,
+                                            destination: Coords(25.033582,121.501609) ,
+                                          );
+
+                                        }
+                                      }catch(e){
+                                        print(e);
+                                      }
+                                      MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
+                                    })
                               ],
                             ),
                           ),
-                          // GestureDetector(
-                          //   child: const CustomSmallOutlinedText(
-                          //       title: '問題回報',
-                          //       color: AppColor.primary),
-                          //   onTap: () async {
-                          //     var data = await showDialog<String>(
-                          //         context: context,
-                          //         builder: (BuildContext context) {
-                          //           return CurrentTaskReportDialog();
-                          //         });
-                          //     if(data.toString()!=""){
-                          //       print(userToken!);
-                          //       print(data.toString());
-                          //       _putCaseCanceled(userToken!, data.toString(), taskModel.cases.first.id!);
-                          //     }else{
-                          //       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('問題回報不可為空白！')));
-                          //     }
-                          //   },),
+                          (taskModel.cases.isNotEmpty)?
+                          Text('${taskModel.cases.first.onAddress}')
+                              :
+                          Container(),
+                          // Container(
+                          //   margin: const EdgeInsets.fromLTRB(0,10,0,0),
+                          //   child: Row(
+                          //     children: [
+                          //       const Text('乘客：'),
+                          //       const SizedBox(width: 10),
+                          //       CustomSmallElevatedButton(
+                          //           icon: const Icon(Icons.call_outlined,size: 16,),
+                          //           title: '電話',
+                          //           color: AppColor.primary,
+                          //           onPressed: (){
+                          //             Uri uri = Uri.parse("tel://${taskModel.cases.first.customerPhone}");
+                          //             launchUrl(uri);
+                          //           })
+                          //     ],
+                          //   ),
+                          // ),
+                          // Container(
+                          //   margin: const EdgeInsets.fromLTRB(0,0,0,10),
+                          //   child: Row(
+                          //     children: [
+                          //       Text(taskModel.cases.first.customerName!),
+                          //       const SizedBox(width: 10),
+                          //       Text('${taskModel.cases.first.customerPhone}'),
+                          //     ],
+                          //   ),
+                          // ),
+                          const SizedBox(height: 10,),
+                          // (taskModel.cases.first.memo!="")?Text('備註：${taskModel.cases.first.memo}'):Container(),
+                          const SizedBox(height: 10,),
+                          CustomElevatedButton(
+                            onPressed: (){
+                              _putCaseArrived(userToken!, taskModel.cases.first.id!);
+                            },
+                            title: '抵達乘客上車地點',
+                          )
                         ],
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(0,10,0,0),
-                        child: Row(
-                          children: [
-                            const Text('上車地：'),
-                            CustomSmallElevatedButton(
-                                icon: const Icon(Icons.near_me_outlined,size: 16,),
-                                title: '導航',
-                                color: AppColor.primary,
-                                onPressed: ()async{
-
-                                  bool isGoogleMaps = await MapLauncher.isMapAvailable(MapType.google) ?? false;
-
-                                  try{
-                                    if (isGoogleMaps == true) {
-                                      await MapLauncher.showDirections(
-                                        mapType: MapType.google,
-                                        directionsMode: DirectionsMode.driving,
-                                        destinationTitle: taskModel.cases.first.onAddress!,
-                                        destination: Coords(25.033582,121.501609) ,
-                                      );
-                                    } else {
-                                      await MapLauncher.showDirections(
-                                        mapType: MapType.apple,
-                                        directionsMode: DirectionsMode.driving,
-                                        destinationTitle: taskModel.cases.first.onAddress!,
-                                        destination: Coords(25.033582,121.501609) ,
-                                      );
-
-                                    }
-                                  }catch(e){
-                                    print(e);
-                                  }
-                                  MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
-                                })
-                          ],
-                        ),
-                      ),
-                      Text('${taskModel.cases.first.onAddress}'),
-                      // Container(
-                      //   margin: const EdgeInsets.fromLTRB(0,10,0,0),
-                      //   child: Row(
-                      //     children: [
-                      //       const Text('乘客：'),
-                      //       const SizedBox(width: 10),
-                      //       CustomSmallElevatedButton(
-                      //           icon: const Icon(Icons.call_outlined,size: 16,),
-                      //           title: '電話',
-                      //           color: AppColor.primary,
-                      //           onPressed: (){
-                      //             Uri uri = Uri.parse("tel://${taskModel.cases.first.customerPhone}");
-                      //             launchUrl(uri);
-                      //           })
-                      //     ],
-                      //   ),
-                      // ),
-                      // Container(
-                      //   margin: const EdgeInsets.fromLTRB(0,0,0,10),
-                      //   child: Row(
-                      //     children: [
-                      //       Text(taskModel.cases.first.customerName!),
-                      //       const SizedBox(width: 10),
-                      //       Text('${taskModel.cases.first.customerPhone}'),
-                      //     ],
-                      //   ),
-                      // ),
-                      const SizedBox(height: 10,),
-                      // (taskModel.cases.first.memo!="")?Text('備註：${taskModel.cases.first.memo}'):Container(),
-                      const SizedBox(height: 10,),
-                      CustomElevatedButton(
-                          onPressed: (){
-                            // _putCaseArrived(userToken!, taskModel.cases.first.id!);
-                            Case theCase = Case(
-                                customerName:'customerName',
-                                customerPhone:'customerPhone',
-                                onLat:'22.639492',
-                                onLng:'120.302583',
-                                onAddress:'台北火車站',
-                                offLat:'24.081624',
-                                offLng:'120.538378',
-                                offAddress:'公館捷運站',
-                                caseMoney:null,
-                                memo:'無',
-                                shipState:'正承接',);
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: theCase,)));
-                          },
-                          title: '抵達乘客上車地點',
                       )
-                    ],
-                  )
-              ),
-              // next task
-              (taskModel.cases.length>1)?
-              Container(
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.primary, width: 1),
-                      borderRadius: BorderRadius.circular(3)),
-                  child:Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  ),
+                  // next task
+                  (taskModel.cases.length>1)?
+                  Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          border: Border.all(color: AppColor.primary, width: 1),
+                          borderRadius: BorderRadius.circular(3)),
+                      child:Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          RichText(
-                            text: TextSpan(
-                              text: '下個任務：',
-                              style: const TextStyle(color: Colors.black87, fontSize: 18,),
-                              children: <TextSpan>[
-                                TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              RichText(
+                                text: TextSpan(
+                                  text: '下個任務：',
+                                  style: const TextStyle(color: Colors.black87, fontSize: 18,),
+                                  children: <TextSpan>[
+                                    TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(0,10,0,0),
+                            child: Row(
+                              children: [
+                                const Text('上車地：'),
+                                CustomSmallElevatedButton(
+                                    icon: const Icon(Icons.near_me_outlined,size: 16,),
+                                    title: '導航',
+                                    color: AppColor.primary,
+                                    onPressed: (){
+                                      // _launchMap(widget.theCase.onAddress!);
+                                      MapsLauncher.launchQuery(taskModel.cases[1].onAddress!);
+                                    })
                               ],
                             ),
                           ),
+                          Container(
+                            child: Text('${taskModel.cases[1].onAddress}'),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(0,10,0,0),
+                            child: Row(
+                              children: [
+                                const Text('乘客：'),
+                                const SizedBox(width: 10),
+                                CustomSmallElevatedButton(
+                                    icon: const Icon(Icons.call_outlined,size: 16,),
+                                    title: '電話',
+                                    color: AppColor.primary,
+                                    onPressed: (){
+                                      Uri uri = Uri.parse("tel://${taskModel.cases[1].customerPhone}");
+                                      launchUrl(uri);
+                                    })
+                              ],
+                            ),
+                          ),
+                          Container(
+                            margin: const EdgeInsets.fromLTRB(0,0,0,10),
+                            child: Row(
+                              children: [
+                                Text(taskModel.cases[1].customerName!),
+                                const SizedBox(width: 10),
+                                Text('${taskModel.cases[1].customerPhone}'),
+                              ],
+                            ),
+                          ),
+                          (taskModel.cases[1].memo!="")?Text('備註：${taskModel.cases[1].memo}'):Container(),
                         ],
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(0,10,0,0),
-                        child: Row(
-                          children: [
-                            const Text('上車地：'),
-                            CustomSmallElevatedButton(
-                                icon: const Icon(Icons.near_me_outlined,size: 16,),
-                                title: '導航',
-                                color: AppColor.primary,
-                                onPressed: (){
-                                  // _launchMap(widget.theCase.onAddress!);
-                                  MapsLauncher.launchQuery(taskModel.cases[1].onAddress!);
-                                })
-                          ],
-                        ),
-                      ),
-                      Container(
-                        child: Text('${taskModel.cases[1].onAddress}'),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(0,10,0,0),
-                        child: Row(
-                          children: [
-                            const Text('乘客：'),
-                            const SizedBox(width: 10),
-                            CustomSmallElevatedButton(
-                                icon: const Icon(Icons.call_outlined,size: 16,),
-                                title: '電話',
-                                color: AppColor.primary,
-                                onPressed: (){
-                                  Uri uri = Uri.parse("tel://${taskModel.cases[1].customerPhone}");
-                                  launchUrl(uri);
-                                })
-                          ],
-                        ),
-                      ),
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(0,0,0,10),
-                        child: Row(
-                          children: [
-                            Text(taskModel.cases[1].customerName!),
-                            const SizedBox(width: 10),
-                            Text('${taskModel.cases[1].customerPhone}'),
-                          ],
-                        ),
-                      ),
-                      (taskModel.cases[1].memo!="")?Text('備註：${taskModel.cases[1].memo}'):Container(),
-                    ],
+                      )
                   )
-              )
-                  :
-              Container()
-            ],
-          );
-        }),
-      ),
+                      :
+                  Container()
+                ],
+              );
+            }),
+          ),
+        )
     );
   }
 
@@ -338,6 +331,9 @@ class _CurrentTaskState extends State<CurrentTask> {
       if(map['message']=='ok'){
         // Navigator.push(
         //     context, MaterialPageRoute(builder: (context) => OnTask(theCase: widget.theCase)));
+        var taskModel = context.read<TaskModel>();
+        taskModel.isOnTask = true;
+        Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: taskModel.cases.first)));
         setState(() {});
       }else{
         ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));

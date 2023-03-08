@@ -19,6 +19,8 @@ class ServerApi{
   static const PATH_CASE_CATCHED = '/api/case_catched';
   static const PATH_CASE_FINISH = '/api/case_finished';
   static const PATH_CASE_CANCEL = '/api/case_canceled';
+  static const PATH_CASE_NOTIFY_CUSTOMER = '/api/case_notify_customer';
+  static const PATH_CASE_REFUSE = '/api/case_refuse';
 
   static const PATH_CAR_TEAMS = '/api/car_teams';
 

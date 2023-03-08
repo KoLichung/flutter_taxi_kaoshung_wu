@@ -5,8 +5,9 @@ class CustomElevatedButton extends StatelessWidget {
 
   final Function onPressed;
   final String title;
+  Color? color;
 
-  const CustomElevatedButton({Key? key, required this.onPressed,required this.title, }) : super(key: key);
+  CustomElevatedButton({Key? key, required this.onPressed,required this.title, this.color}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,7 @@ class CustomElevatedButton extends StatelessWidget {
             onPressed();
           },
           style: ElevatedButton.styleFrom(
-              backgroundColor: AppColor.primary,
+              backgroundColor: (color!=null)?color:AppColor.primary,
               elevation: 0
           ),
           child: SizedBox(

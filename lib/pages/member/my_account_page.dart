@@ -25,10 +25,9 @@ class _MyAccountPageState extends State<MyAccountPage> {
   @override
   Widget build(BuildContext context) {
     var userModel = context.read<UserModel>();
-
-    print(userModel.user);
-
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async => false,
+        child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -65,17 +64,17 @@ class _MyAccountPageState extends State<MyAccountPage> {
                   children: [
                     const Text('姓名：', style: TextStyle(fontSize: 18),),
                     Text(userModel.user!.name!, style: const TextStyle(fontSize: 18),),
-                ],),
+                  ],),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20,0,15,10),
                 child: Row(
-                  children: [
-                    const Text('狀態：', style: TextStyle(fontSize: 18),),
-                    (userModel.user!.isPassed!)
-                        ? const Text('登入中', style: TextStyle(fontSize: 18))
-                        : const Text('登入中(尚未通過審核)', style: TextStyle(fontSize: 18)),
-                  ]
+                    children: [
+                      const Text('狀態：', style: TextStyle(fontSize: 18),),
+                      (userModel.user!.isPassed!)
+                          ? const Text('登入中', style: TextStyle(fontSize: 18))
+                          : const Text('登入中(尚未通過審核)', style: TextStyle(fontSize: 18)),
+                    ]
                 ),
               ),
               const Divider(
@@ -105,7 +104,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                   onPressed: () async {
                     // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const MyHomePage()), (Route<dynamic> route) => false, );
                     print('here');
-                    _lineLogOut();
+                    // _lineLogOut();
                     _putUpdateOnlineState(userModel.token!, false);
                     userModel.token = null;
                     userModel.removeUser(context);
@@ -148,16 +147,17 @@ class _MyAccountPageState extends State<MyAccountPage> {
               const SizedBox(height: 20,),
             ],
           ),
-        ));
+        ))
+    );
   }
 
-  Future<void> _lineLogOut() async {
-    try {
-      await LineSDK.instance.logout();
-    } on PlatformException catch (e) {
-      print(e.message);
-    }
-  }
+  // Future<void> _lineLogOut() async {
+  //   try {
+  //     await LineSDK.instance.logout();
+  //   } on PlatformException catch (e) {
+  //     print(e.message);
+  //   }
+  // }
 
   Future _putUpdateOnlineState(String token, bool isOnline) async{
     String path = ServerApi.PATH_UPDATE_ONLINE_STATE;
@@ -238,14 +238,20 @@ class _MyAccountPageState extends State<MyAccountPage> {
       );
 
       print(response.body);
+      _printLongString(response.body);
 
-      if(response.body.contains('continuous order exists')){
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("有訂單尚未完成！無法刪除！"),));
-      }
       if(response.body.contains('delete user')){
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("成功刪除使用者!"),));
         var userModel = context.read<UserModel>();
         userModel.removeUser(context);
+        userModel.resetPositionParams();
+        if(userModel.positionStreamSubscription!=null){
+          print("not null positionStreamSubscription");
+          userModel.positionStreamSubscription!.pause();
+          userModel.positionStreamSubscription!.cancel();
+          userModel.positionStreamSubscription = null;
+        }
+        Navigator.popUntil(context, (Route<dynamic> route) => route.isFirst);
       }
 
     } catch (e) {
@@ -254,6 +260,10 @@ class _MyAccountPageState extends State<MyAccountPage> {
     return null;
   }
 
+  void _printLongString(String text) {
+    final RegExp pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((RegExpMatch match) => print(match.group(0)));
+  }
 
 }
 

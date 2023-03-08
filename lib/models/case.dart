@@ -20,6 +20,8 @@ class Case {
   int? owner;
   int? user;
   String? shipState;
+  int? countdownSecond;
+  int? expectSecond;
 
   Case(
       {this.id,
@@ -42,7 +44,10 @@ class Case {
         this.customer,
         this.owner,
         this.user,
-        this.shipState});
+        this.shipState,
+        this.countdownSecond,
+        this.expectSecond,
+      });
 
   Case.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -83,6 +88,14 @@ class Case {
       }
     }else{
       shipState = '';
+    }
+    if(json['countdown_second']!=null){
+      countdownSecond = json['countdown_second'];
+    }
+    if(json['expect_second']!=null){
+      expectSecond = json['expect_second'];
+    }else{
+      expectSecond = 0;
     }
   }
 

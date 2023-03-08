@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_taxi_chinghsien/color.dart';
 
 class OnTaskPassengerOffDialog extends StatefulWidget {
-  const OnTaskPassengerOffDialog({Key? key});
+  final int before_left_money;
+  final int dispatch_fee;
+  final int after_left_money;
+
+  const OnTaskPassengerOffDialog({Key? key, required this.before_left_money, required this.dispatch_fee, required this.after_left_money});
 
   @override
   _OnTaskPassengerOffDialogState createState() => new _OnTaskPassengerOffDialogState();
@@ -32,14 +36,14 @@ class _OnTaskPassengerOffDialogState extends State<OnTaskPassengerOffDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('扣款前儲值金額：'),
-                Text('餘額'),
+                Text('${widget.before_left_money}'),
               ],
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('扣除金額：'),
-                Text('餘額'),
+                Text('${widget.dispatch_fee}'),
               ],
             ),
             const Divider(thickness: 1,),
@@ -47,7 +51,7 @@ class _OnTaskPassengerOffDialogState extends State<OnTaskPassengerOffDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('扣款後餘額：'),
-                Text('餘額'),
+                Text('${widget.after_left_money}'),
               ],
             ),
           ],

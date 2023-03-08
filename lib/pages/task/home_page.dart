@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
   // Position? currentPosition;
 
   Timer? _timer;
-  int timerPeriod = 3;
+  int timerPeriod = 2;
 
   late List<Case> myCases = <Case>[];
 
@@ -46,19 +46,20 @@ class _HomePageState extends State<HomePage> {
   Timer? _taskTimer;
   int _taskWaitingTime = 15;
 
-  void startTaskTimer() {
+  void _startTaskTimer(int currentTime) {
+    _taskWaitingTime = currentTime;
     const oneSec = Duration(seconds: 1);
     _taskTimer = Timer.periodic(
       oneSec, (Timer timer) {
-        if (_taskWaitingTime == 0) {
-          setState(() {
-            timer.cancel();
-          });
-        } else {
-          setState(() {
-            _taskWaitingTime--;
-          });
+        _taskWaitingTime--;
+        if(_taskWaitingTime == -1){
+          if(_taskTimer!=null) {
+            print('cancel task timer');
+            _taskTimer!.cancel();
+            _taskTimer=null;
+          }
         }
+        setState(() {});
       },
     );
   }
@@ -95,13 +96,18 @@ class _HomePageState extends State<HomePage> {
       _timer!.cancel();
       _timer = null;
     }
-    _taskTimer?.cancel();
-    _taskTimer = null;
+    if(_taskTimer!=null) {
+      print('cancel task timer');
+      _taskTimer!.cancel();
+      _taskTimer=null;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async => false,
+        child: Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         // actions: [
@@ -127,14 +133,14 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(105.0),
-          child: Container(
+            preferredSize: const Size.fromHeight(105.0),
+            child: Container(
               height: 105,
               decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(width: 1.0, color: Colors.grey.shade300),
-                )
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(width: 1.0, color: Colors.grey.shade300),
+                  )
               ),
               child: Consumer<UserModel>(builder: (context, userModel, child) =>
                   Column(
@@ -154,12 +160,13 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
               ),
-          )
+            )
         ),
       ),
       body: Consumer<UserModel>(builder: (context, userModel, child) =>
-        userModel.isOnline? checkIsTasks() : offlineScene(),
+      userModel.isOnline? checkIsTasks() : offlineScene(),
       ),
+    )
     );
   }
 
@@ -168,24 +175,28 @@ class _HomePageState extends State<HomePage> {
         style: ElevatedButton.styleFrom(primary: AppColor.red,elevation: 0),
         child: const Text('點我休息'),
         onPressed: () async {
-          var userModel = context.read<UserModel>();
-          userModel.resetPositionParams();
-          if(userModel.positionStreamSubscription!=null){
-            print("not null positionStreamSubscription");
-            userModel.positionStreamSubscription!.pause();
-            userModel.positionStreamSubscription!.cancel();
-            userModel.positionStreamSubscription = null;
-          }
-
-          if(_timer!=null){
-            print('cancel timer');
-            _timer!.cancel();
-            _timer = null;
-          }
-
-          _putUpdateOnlineState(userModel.token!, false);
+          actionOffline();
         },
     );
+  }
+
+  void actionOffline(){
+    var userModel = context.read<UserModel>();
+    userModel.resetPositionParams();
+    if(userModel.positionStreamSubscription!=null){
+      print("not null positionStreamSubscription");
+      userModel.positionStreamSubscription!.pause();
+      userModel.positionStreamSubscription!.cancel();
+      userModel.positionStreamSubscription = null;
+    }
+
+    if(_timer!=null){
+      print('cancel timer');
+      _timer!.cancel();
+      _timer = null;
+    }
+
+    _putUpdateOnlineState(userModel.token!, false);
   }
 
   statusOfflineButton(){
@@ -205,80 +216,84 @@ class _HomePageState extends State<HomePage> {
             //make sure update location when online
 
             if(userModel.user!.isPassed!) {
-              _putUpdateOnlineState(userModel.token!, true);
-              print('start timer');
-              _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
-                // print('Hello world, timer: $timer.tick');
-                _fetchCases(userModel.token!);
-              });
+              final result = await _putUpdateOnlineState(userModel.token!, true);
+              // result ok 為成功上線
+              if(result=="ok"){
+                print('start timer');
+                _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
+                  // print('Hello world, timer: $timer.tick');
+                  _fetchCases(userModel.token!);
+                });
+                Position onlinePosition = await _getCurrentPosition();
+                userModel.currentPosition = onlinePosition;
+
+                print('onlinePosition ${onlinePosition}');
+                _fetchUpdateLatLng(userModel.token!, onlinePosition.latitude, onlinePosition.longitude);
+
+                userModel.positionStreamSubscription =  Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) {
+                  if(position!=null){
+                    print('${position.latitude.toString()}, ${position.longitude.toString()}');
+
+                    if(userModel.lastUpdateLocationTime !=null && userModel.currentPosition != null){
+                      DateTime nowTime = DateTime.now();
+                      DateTime lastTime = userModel.lastUpdateLocationTime!;
+                      Duration diff = nowTime.difference(lastTime);
+                      double currentVelocity = calCulateSpeed(userModel.currentPosition!, position, diff.inSeconds);
+
+                      if(currentVelocity.isNaN){
+                        userModel.positionUpdateCount = 0;
+                        _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+                      }else if(currentVelocity >= 30 && userModel.positionUpdateCount >= 6){
+                        userModel.positionUpdateCount = 0;
+                        _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+                      }else if(currentVelocity < 30 && currentVelocity >= 15 && userModel.positionUpdateCount >= 3){
+                        userModel.positionUpdateCount = 0;
+                        _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+                      }else if(currentVelocity < 15 && currentVelocity >= 5 && userModel.positionUpdateCount >= 2){
+                        userModel.positionUpdateCount = 0;
+                        _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+                      }else if(currentVelocity < 5 && currentVelocity > 0){
+                        userModel.positionUpdateCount = 0;
+                        _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+                      }
+                    }
+
+                    userModel.lastUpdateLocationTime = DateTime.now();
+                    userModel.positionUpdateCount ++;
+
+                    userModel.currentPosition = position;
+
+
+                    if(taskModel.isOnTask){
+                      // current velocity
+                      if(taskModel.routePositions.isNotEmpty && taskModel.lastRecordTime!=null){
+                        DateTime nowTime = DateTime.now();
+                        DateTime lastTime = taskModel.lastRecordTime!;
+                        Duration diff = nowTime.difference(lastTime);
+                        try{
+                          taskModel.currentVelocity = calCulateSpeed(userModel.currentPosition!, taskModel.routePositions.last, diff.inSeconds);
+                        }catch(e){
+                          print(e);
+                        }
+                      }
+
+                      //total distance
+                      taskModel.routePositions.add(position);
+                      int listLength = taskModel.routePositions.length;
+                      if(listLength >= 2){
+                        taskModel.totalDistance = taskModel.totalDistance + calculateDistance(taskModel.routePositions[listLength-1].latitude, taskModel.routePositions[listLength-1].longitude, taskModel.routePositions[listLength-2].latitude, taskModel.routePositions[listLength-2].longitude);
+                      }
+
+                      taskModel.lastRecordTime = DateTime.now();
+                    }
+                  }else{
+                    print('Unknown position');
+                  }
+                });
+              }
             }else{
               ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('未通過審核！')));
             }
-
-            Position onlinePosition = await _getCurrentPosition();
-            print('onlinePosition ${onlinePosition}');
-            _fetchUpdateLatLng(userModel.token!, onlinePosition.latitude, onlinePosition.longitude);
-
-            userModel.positionStreamSubscription =  Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) {
-              if(position!=null){
-                print('${position.latitude.toString()}, ${position.longitude.toString()}');
-
-                if(userModel.lastUpdateLocationTime !=null && userModel.currentPosition != null){
-                  DateTime nowTime = DateTime.now();
-                  DateTime lastTime = userModel.lastUpdateLocationTime!;
-                  Duration diff = nowTime.difference(lastTime);
-                  double currentVelocity = calCulateSpeed(userModel.currentPosition!, position, diff.inSeconds);
-
-                  if(currentVelocity.isNaN){
-                    userModel.positionUpdateCount = 0;
-                    _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
-                  }else if(currentVelocity >= 30 && userModel.positionUpdateCount >= 6){
-                    userModel.positionUpdateCount = 0;
-                    _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
-                  }else if(currentVelocity < 30 && currentVelocity >= 15 && userModel.positionUpdateCount >= 3){
-                    userModel.positionUpdateCount = 0;
-                    _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
-                  }else if(currentVelocity < 15 && currentVelocity >= 5 && userModel.positionUpdateCount >= 2){
-                    userModel.positionUpdateCount = 0;
-                    _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
-                  }else if(currentVelocity < 5 && currentVelocity > 0){
-                    userModel.positionUpdateCount = 0;
-                    _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
-                  }
-                }
-
-                userModel.lastUpdateLocationTime = DateTime.now();
-                userModel.positionUpdateCount ++;
-
-                userModel.currentPosition = position;
-
-
-                if(taskModel.isOnTask){
-                  // current velocity
-                  if(taskModel.routePositions.isNotEmpty && taskModel.lastRecordTime!=null){
-                    DateTime nowTime = DateTime.now();
-                    DateTime lastTime = taskModel.lastRecordTime!;
-                    Duration diff = nowTime.difference(lastTime);
-                    try{
-                      taskModel.currentVelocity = calCulateSpeed(userModel.currentPosition!, taskModel.routePositions.last, diff.inSeconds);
-                    }catch(e){
-                      print(e);
-                    }
-                  }
-
-                  //total distance
-                  taskModel.routePositions.add(position);
-                  int listLength = taskModel.routePositions.length;
-                  if(listLength >= 2){
-                    taskModel.totalDistance = taskModel.totalDistance + calculateDistance(taskModel.routePositions[listLength-1].latitude, taskModel.routePositions[listLength-1].longitude, taskModel.routePositions[listLength-2].latitude, taskModel.routePositions[listLength-2].longitude);
-                  }
-
-                  taskModel.lastRecordTime = DateTime.now();
-                }
-              }else{
-                print('Unknown position');
-              }
-            });
 
           }
         },
@@ -306,6 +321,9 @@ class _HomePageState extends State<HomePage> {
     if (myCases.isEmpty || !userModel.user!.isPassed!){
       return onCallScene(userModel.user!.isPassed!);
     } else {
+      if(_taskWaitingTime==0 || _taskWaitingTime==-1){
+        return onCallScene(userModel.user!.isPassed!);
+      }
       return getTaskList(userModel.currentPosition!);
     }
   }
@@ -334,9 +352,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   getTaskList(Position currentPosition){
-    startTaskTimer();
-    return
-        ListView.builder(
+    return ListView.builder(
             scrollDirection: Axis.vertical,
             shrinkWrap: true,
             itemCount: myCases.length,
@@ -364,7 +380,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       if(currentPosition!=null)Text('距離 ${getDistance(myCases[i], currentPosition)}'),
                     ],),
-                    Text('預計行車時間：預估時間 +120 秒'),
+                    Text('預計行車時間：${_getExpectTimeString(myCases[i].expectSecond! + 120)}'),
                     Text('上車地：${myCases[i].onAddress}'),
                     (myCases[i].offAddress!="")?Text('下車地：${myCases[i].offAddress}'):Container(),
                     // (myCases[i].memo!="")?Text('備註：${myCases[i].memo}'):Container(),
@@ -376,9 +392,27 @@ class _HomePageState extends State<HomePage> {
                           myCases.removeAt(i);
                           // ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('接單中~~')));
                         },
-                        title: '接單')
+                        title: '接單'),
+                    CustomElevatedButton(
+                        onPressed: (){
+                          var userModel = context.read<UserModel>();
+                          _putCaseRefuse(userModel.token!, myCases[i]);
+                          myCases.removeAt(i);
+                        },
+                        title: '拒絕',
+                        color: AppColor.red)
                   ],),);
             });
+  }
+
+  String _getExpectTimeString(int seconds){
+    int integer = seconds ~/ 60;
+    int remainder = seconds % 60;
+    if (integer == 0){
+      return '預估時間 $remainder 秒';
+    }else{
+      return '預估時間 $integer 分 $remainder 秒';
+    }
   }
 
   String getDistance(Case theCase, Position currentPosition){
@@ -458,6 +492,7 @@ class _HomePageState extends State<HomePage> {
       // return;
     }
 
+    print('getting position');
     final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
     print(position);
 
@@ -511,32 +546,35 @@ class _HomePageState extends State<HomePage> {
         },
       );
 
-      List body = json.decode(utf8.decode(response.body.runes.toList()));
-      List<Case> cases = body.map((value) => Case.fromJson(value)).toList();
-      if(myCases.isEmpty && cases.isNotEmpty){
-        _playLocalAsset();
+      // print(response.body);
+      _printLongString(response.body);
+
+      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+      List body = map["cases"];
+
+      var userModel = context.read<UserModel>();
+      userModel.user!.leftMoney = map["left_money"];
+
+      // 如果 left money < -100, 自動下線
+      if(map["left_money"]<= -100){
+        actionOffline();
+      }else{
+        List<Case> cases = body.map((value) => Case.fromJson(value)).toList();
+        if(myCases.isEmpty && cases.isNotEmpty){
+          _playLocalAsset();
+        }
+
+        myCases = cases;
+
+        if(myCases.isNotEmpty && _taskTimer==null){
+          int currentTime = myCases.first.countdownSecond!;
+          if(currentTime==16){
+            currentTime = 15;
+          }
+          _startTaskTimer(currentTime);
+        }
       }
 
-      // add fake case here
-      // cases =[
-      //   Case(
-      //     customerName:'customerName',
-      //     customerPhone:'customerPhone',
-      //     onLat:'22.639492',
-      //     onLng:'120.302583',
-      //     onAddress:'台北火車站',
-      //     offLat:'24.081624',
-      //     offLng:'120.538378',
-      //     offAddress:'公館捷運站',
-      //     caseMoney:null,
-      //     memo:'無',
-      //     shipState:'正承接',),
-      // ];
-
-      myCases = cases;
-
-      // 如果 case 取消 或 秒數不一?, 在 setState 就好,
-      // 回傳時, 應該也要回傳秒數
       setState(() {});
 
     } catch (e) {
@@ -549,54 +587,97 @@ class _HomePageState extends State<HomePage> {
 
     String path = ServerApi.PATH_CASE_CONFIREM;
 
-    var taskModel = context.read<TaskModel>();
-    taskModel.cases.add(theCase);
-    await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
+    try {
+      final queryParameters = {
+        'case_id': theCase.id!.toString(),
+      };
 
-    // try {
-    //   final queryParameters = {
-    //     'case_id': theCase.id!.toString(),
-    //   };
-    //
-    //   final response = await http.put(
-    //       ServerApi.standard(path: path, queryParameters: queryParameters),
-    //       headers: <String, String>{
-    //         'Content-Type': 'application/json; charset=UTF-8',
-    //         'Authorization': 'Token $token',
-    //       },
-    //   );
-    //
-    //   // print(response.body);
-    //   Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
-    //
-    //   if(map['message']=='ok'){
-    //     if(_timer!=null){
-    //       print('cancel timer');
-    //       _timer!.cancel();
-    //       _timer = null;
-    //     }
-    //
-    //     var taskModel = context.read<TaskModel>();
-    //     taskModel.cases.add(theCase);
-    //     await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
-    //
-    //     var userModel = context.read<UserModel>();
-    //     if (userModel.isOnline && _timer == null){
-    //       print('start timer');
-    //       _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
-    //         _fetchCases(userModel.token!);
-    //       });
-    //     }
-    //   }else{
-    //     ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
-    //   }
-    //
-    //   setState(() {});
-    // } catch (e) {
-    //   print(e);
-    //   ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
-    //   // return "error";
-    // }
+      final response = await http.put(
+          ServerApi.standard(path: path, queryParameters: queryParameters),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Authorization': 'Token $token',
+          },
+      );
+
+      _printLongString(response.body);
+
+      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+
+      if(map['message']=='ok'){
+        if(_timer!=null){
+          print('cancel timer');
+          _timer!.cancel();
+          _timer = null;
+        }
+        if(_taskTimer!=null) {
+          print('cancel task timer');
+          _taskTimer!.cancel();
+          _taskTimer=null;
+        }
+
+        var taskModel = context.read<TaskModel>();
+        taskModel.cases.add(theCase);
+        await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
+
+        var userModel = context.read<UserModel>();
+        if (userModel.isOnline && _timer == null){
+          print('start timer');
+          _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
+            _fetchCases(userModel.token!);
+          });
+        }
+      }else{
+        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+      }
+
+      setState(() {});
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+      // return "error";
+    }
+  }
+
+  Future _putCaseRefuse(String token, Case theCase) async {
+    print("case confirm");
+
+    String path = ServerApi.PATH_CASE_REFUSE;
+
+    try {
+      final queryParameters = {
+        'case_id': theCase.id!.toString(),
+      };
+
+      final response = await http.put(
+        ServerApi.standard(path: path, queryParameters: queryParameters),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'Authorization': 'Token $token',
+        },
+      );
+
+      _printLongString(response.body);
+
+      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+
+      if(map['message']=='ok'){
+        if(_taskTimer!=null) {
+          print('cancel task timer');
+          _taskTimer!.cancel();
+          _taskTimer=null;
+        }
+        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('您拒絕了這個單子！')));
+      }else{
+        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+      }
+
+      setState(() {});
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
+      // return "error";
+    }
   }
 
   Future _putUpdateOnlineState(String token, bool isOnline) async{
@@ -628,15 +709,18 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             userModel.isOnline = true;
           });
+          return "ok";
         }else{
           ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('已下線！')));
           var userModel = context.read<UserModel>();
           setState(() {
             userModel.isOnline = false;
           });
+          return "ok";
         }
       }else{
         ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('無法上線，請充值！')));
+        return "error";
       }
     } catch (e) {
       print(e);
@@ -769,6 +853,11 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       print(e);
     }
+  }
+
+  void _printLongString(String text) {
+    final RegExp pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((RegExpMatch match) => print(match.group(0)));
   }
 
 }

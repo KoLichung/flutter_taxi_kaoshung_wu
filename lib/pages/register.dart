@@ -39,13 +39,11 @@ class _RegisterState extends State<Register> {
   TextEditingController carMemoController = TextEditingController();
   TextEditingController pwdController = TextEditingController();
 
-
   DriverGender? _driverGender = DriverGender.male;
 
   List<CarTeam> carTeams=[];
   List<String> carTeamsString =[];
   String dropdownValue = '';
-
 
 
   @override
@@ -95,42 +93,48 @@ class _RegisterState extends State<Register> {
             key: _formKey,
             child: Column(
               children: [
-                const SizedBox(height: 20,),
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text('選擇車隊'),
-                      const SizedBox(width: 15,),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.black54,
-                            width: 1,
-                          ),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            isDense: true,
-                            value: dropdownValue,
-                            items: carTeamsString.map<DropdownMenuItem<String>>((String value){
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child:Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (String? value) {
-                              setState(() {
-                                dropdownValue = value!;
-                              });
-                            },
-                          ),
-                        ),
-                      )
-                    ],),
+                widget.isEdit ?
+                Container()
+                    :
+                Column(
+                  children: [
+                    const SizedBox(height: 20,),
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 15,vertical: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text('選擇車隊'),
+                          const SizedBox(width: 15,),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: Colors.black54,
+                                width: 1,
+                              ),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                isDense: true,
+                                value: dropdownValue,
+                                items: carTeamsString.map<DropdownMenuItem<String>>((String value){
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child:Text(value),
+                                  );
+                                }).toList(),
+                                onChanged: (String? value) {
+                                  setState(() {
+                                    dropdownValue = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                          )
+                        ],),
+                    )],
                 ),
                 const SizedBox(height: 20,),
                 validatorTextFormField('*真實姓名','',driverNameController, false),
@@ -140,7 +144,7 @@ class _RegisterState extends State<Register> {
                 registerTextField('身份證字號','',idNumberController),
                 getDriverGender(),
                 const SizedBox(height: 10,),
-                validatorTextFormField('*車號(ABC-123)','',carPlateController, false),
+                validatorTextFormField('*車號(ABC-1234,請填 1234)','',carPlateController, false),
                 registerTextField('顏色','白',carColorController),
                 registerTextField('座位數','4',seatNumberController),
                 Container(
@@ -189,7 +193,10 @@ class _RegisterState extends State<Register> {
                           //       content: Text('資料填寫成功')),
                           // );
                           var userModel = context.read<UserModel>();
-                          User user = userModel.user!;
+                          User user = User();
+                          if(userModel.user!=null){
+                            user = userModel.user!;
+                          }
                           user.name = driverNameController.text;
                           user.nickName = nickNameController.text;
                           user.phone = phoneNumberController.text;
@@ -361,6 +368,9 @@ class _RegisterState extends State<Register> {
     print(token);
     print(user.phone);
 
+    int carTeamId = carTeams.where((element) => element.name == dropdownValue).first.id!;
+    print('carTeamId $carTeamId');
+
     try {
       Map queryParameters = {
         'phone': user.phone,
@@ -373,6 +383,7 @@ class _RegisterState extends State<Register> {
         'number_sites': user.numberSites,
         'is_online': isOnline,
         'car_memo':user.carMemo,
+        'car_team':carTeamId,
       };
 
       final response = await http.put(
@@ -410,6 +421,9 @@ class _RegisterState extends State<Register> {
 
     String path = ServerApi.PATH_CREATE_USER;
 
+    int carTeamId = carTeams.where((element) => element.name == dropdownValue).first.id!;
+    print('carTeamId $carTeamId');
+
     // try {
       Map queryParameters = {
         'phone': user.phone,
@@ -423,8 +437,8 @@ class _RegisterState extends State<Register> {
         // 'line_id': lineId,
         'car_memo':user.carMemo,
         // 'password': "00000",
-        'password': password
-
+        'password': password,
+        'car_team':carTeamId,
       };
 
       final response = await http.post(ServerApi.standard(path: path),
@@ -437,6 +451,7 @@ class _RegisterState extends State<Register> {
 
       print(response.statusCode);
       print(response.body);
+      _printLongString(response.body);
 
       if(response.statusCode == 201) {
         var userModel = context.read<UserModel>();
@@ -546,6 +561,11 @@ class _RegisterState extends State<Register> {
     } catch (e) {
       print(e);
     }
+  }
+
+  void _printLongString(String text) {
+    final RegExp pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((RegExpMatch match) => print(match.group(0)));
   }
 }
 

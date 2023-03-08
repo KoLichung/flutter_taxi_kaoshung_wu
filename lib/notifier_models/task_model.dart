@@ -9,14 +9,12 @@ class TaskModel extends ChangeNotifier {
 
   bool isOnTask = false;
   List<Position> routePositions = [];
-  int currentTaskPrice = 50;
+  double currentTaskPrice = 50.0;
   double totalDistance = 0;
   int secondTotal = 0;
 
   DateTime? lastRecordTime;
   double currentVelocity = -1;
-
-  Position? lastFiveSecondPosition;
 
   void addCase(Case newCase){
     cases.add(newCase);
@@ -24,15 +22,16 @@ class TaskModel extends ChangeNotifier {
   }
 
   void setCurrentTaskPrice(){
-    if(totalDistance >= 1){
-      int times = totalDistance.floor();
-      currentTaskPrice = 50 + times*20;
+    if(totalDistance >= 0.01){
+      int totalDistanceInMeter = (totalDistance * 100).floor();
+      int times = totalDistanceInMeter ~/ 5;
+      currentTaskPrice = 50.0 + times * 0.1;
     }else{
-      currentTaskPrice = 50;
+      currentTaskPrice = 50.0;
     }
 
-    int times = secondTotal~/30;
-    currentTaskPrice = currentTaskPrice +  times*1;
+    int times = secondTotal~/15;
+    currentTaskPrice = currentTaskPrice +  times*0.5;
 
     print('current velocity $currentVelocity');
     print('total distance $totalDistance');
@@ -41,7 +40,7 @@ class TaskModel extends ChangeNotifier {
   }
 
   void resetTask(){
-    currentTaskPrice = 50;
+    currentTaskPrice = 50.0;
     totalDistance = 0;
     routePositions.clear();
     isOnTask = false;
