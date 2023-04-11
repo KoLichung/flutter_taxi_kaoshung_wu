@@ -50,6 +50,8 @@ dependencies:
   audioplayers: ^0.20.1
   package_info_plus: ^3.0.2
   map_launcher: ^2.5.0+1
+#  flutter_background_service: ^2.4.6
+  shared_preferences: ^2.0.15
 
 dev_dependencies:
   flutter_test:

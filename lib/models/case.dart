@@ -10,7 +10,6 @@ class Case {
   String? offLng;
   String? offAddress;
   int? caseMoney;
-  String? memo;
   String? createTime;
   String? confirmTime;
   String? arrivedTime;
@@ -22,6 +21,10 @@ class Case {
   String? shipState;
   int? countdownSecond;
   int? expectSecond;
+
+  String? memo;
+  String? timeMemo;
+  String? carTeamName;
 
   Case(
       {this.id,
@@ -35,7 +38,6 @@ class Case {
         this.offLng,
         this.offAddress,
         this.caseMoney,
-        this.memo,
         this.createTime,
         this.confirmTime,
         this.arrivedTime,
@@ -47,6 +49,9 @@ class Case {
         this.shipState,
         this.countdownSecond,
         this.expectSecond,
+        this.memo,
+        this.timeMemo,
+        this.carTeamName,
       });
 
   Case.fromJson(Map<String, dynamic> json) {
@@ -65,11 +70,6 @@ class Case {
       offAddress = "";
     }
     caseMoney = json['case_money'];
-    if(json['memo']!=null) {
-      memo = json['memo'];
-    }else{
-      memo = "";
-    }
     createTime = json['create_time'];
     confirmTime = json['confirm_time'];
     arrivedTime = json['arrived_time'];
@@ -96,6 +96,21 @@ class Case {
       expectSecond = json['expect_second'];
     }else{
       expectSecond = 0;
+    }
+    if(json['memo']!=null) {
+      memo = json['memo'];
+    }else{
+      memo = "";
+    }
+    if(json['time_memo']!=null) {
+      timeMemo = json['time_memo'];
+    }else{
+      timeMemo = "";
+    }
+    if(json['carTeamName']!=null) {
+      carTeamName = json['carTeamName'];
+    }else{
+      carTeamName = "";
     }
   }
 

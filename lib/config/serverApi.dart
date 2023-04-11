@@ -13,6 +13,7 @@ class ServerApi{
   static const PATH_USER_CASE = '/api/user_cases/';
   static const PATH_UPDATE_LAT_LNG = '/api/update_lat_lng';
   static const PATH_GET_CASES = '/api/get_cases/';
+  static const PATH_GET_CASE_DETAIL = '/api/case_detail';
 
   static const PATH_CASE_CONFIREM = '/api/case_confirm';
   static const PATH_CASE_ARRIVE = '/api/case_arrived';
@@ -23,6 +24,8 @@ class ServerApi{
   static const PATH_CASE_REFUSE = '/api/case_refuse';
 
   static const PATH_CAR_TEAMS = '/api/car_teams';
+
+  static const PATH_GEOCODE = 'https://maps.googleapis.com/maps/api/geocode/json?address=';
 
   static const PATH_GET_CURRENT_VERSION= '/api/get_current_version';
 

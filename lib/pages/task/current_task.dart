@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_taxi_chinghsien/notifier_models/task_model.dart';
 import 'package:flutter_taxi_chinghsien/pages/task/current_task_report_dialog.dart';
@@ -30,15 +31,14 @@ class CurrentTask extends StatefulWidget {
 
 class _CurrentTaskState extends State<CurrentTask> {
 
-
   String buttonText = '抵達乘客上車地點';
   bool isPassengerOnBoard = false;
-
   String taskStatus = '接客中';
-
   bool isNextTaskVisible = false;
-
   String? userToken;
+  bool isRequesting = false;
+
+  Timer? _fetchTimer;
 
   @override
   void initState() {
@@ -48,7 +48,11 @@ class _CurrentTaskState extends State<CurrentTask> {
     var userModel = context.read<UserModel>();
     userToken = userModel.token!;
 
+    var taskModel = context.read<TaskModel>();
 
+    _fetchTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      _fetchCaseState(userToken!, taskModel.cases.first.id!);
+    });
   }
 
   @override
@@ -115,24 +119,10 @@ class _CurrentTaskState extends State<CurrentTask> {
                                   ],
                                 ),
                               ),
-                              // GestureDetector(
-                              //   child: const CustomSmallOutlinedText(
-                              //       title: '問題回報',
-                              //       color: AppColor.primary),
-                              //   onTap: () async {
-                              //     var data = await showDialog<String>(
-                              //         context: context,
-                              //         builder: (BuildContext context) {
-                              //           return CurrentTaskReportDialog();
-                              //         });
-                              //     if(data.toString()!=""){
-                              //       print(userToken!);
-                              //       print(data.toString());
-                              //       _putCaseCanceled(userToken!, data.toString(), taskModel.cases.first.id!);
-                              //     }else{
-                              //       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('問題回報不可為空白！')));
-                              //     }
-                              //   },),
+                              (taskModel.cases.isNotEmpty)?
+                              Text('${taskModel.cases.first.carTeamName}')
+                              :
+                              Container(),
                             ],
                           ),
                           Container(
@@ -145,38 +135,38 @@ class _CurrentTaskState extends State<CurrentTask> {
                                     title: '導航',
                                     color: AppColor.primary,
                                     onPressed: ()async{
-
                                       bool isGoogleMaps = await MapLauncher.isMapAvailable(MapType.google) ?? false;
-
+                                      print('onLat ${taskModel.cases.first.onLat} onLng ${taskModel.cases.first.onLng}');
                                       try{
                                         if (isGoogleMaps == true) {
                                           await MapLauncher.showDirections(
                                             mapType: MapType.google,
                                             directionsMode: DirectionsMode.driving,
                                             destinationTitle: taskModel.cases.first.onAddress!,
-                                            destination: Coords(25.033582,121.501609) ,
+                                            destination: Coords(
+                                              double.parse(taskModel.cases.first.onLat!),
+                                              double.parse(taskModel.cases.first.onLng!),
+                                            ),
                                           );
                                         } else {
                                           await MapLauncher.showDirections(
                                             mapType: MapType.apple,
                                             directionsMode: DirectionsMode.driving,
                                             destinationTitle: taskModel.cases.first.onAddress!,
-                                            destination: Coords(25.033582,121.501609) ,
+                                            destination: Coords(
+                                              double.parse(taskModel.cases.first.onLat!),
+                                              double.parse(taskModel.cases.first.onLng!),
+                                            ),
                                           );
-
                                         }
                                       }catch(e){
                                         print(e);
                                       }
-                                      MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
+                                      // MapsLauncher.launchQuery(taskModel.cases.first.onAddress!);
                                     })
                               ],
                             ),
                           ),
-                          (taskModel.cases.isNotEmpty)?
-                          Text('${taskModel.cases.first.onAddress}')
-                              :
-                          Container(),
                           // Container(
                           //   margin: const EdgeInsets.fromLTRB(0,10,0,0),
                           //   child: Row(
@@ -204,12 +194,28 @@ class _CurrentTaskState extends State<CurrentTask> {
                           //     ],
                           //   ),
                           // ),
-                          const SizedBox(height: 10,),
-                          // (taskModel.cases.first.memo!="")?Text('備註：${taskModel.cases.first.memo}'):Container(),
+                          (taskModel.cases.isNotEmpty)?
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${taskModel.cases.first.onAddress}'),
+                              const SizedBox(height: 10,),
+                              (taskModel.cases.first.offAddress!="")?Text('下車地：${taskModel.cases.first.offAddress}'):Container(),
+                              (taskModel.cases.first.timeMemo!="")?Text('時間：${taskModel.cases.first.timeMemo}'):Container(),
+                              (taskModel.cases.first.memo!="")?Text('備註：${taskModel.cases.first.memo}'):Container(),
+                            ],
+                          )
+                              :
+                          Container(),
                           const SizedBox(height: 10,),
                           CustomElevatedButton(
                             onPressed: (){
-                              _putCaseArrived(userToken!, taskModel.cases.first.id!);
+                              if(!isRequesting){
+                                _putCaseArrived(userToken!, taskModel.cases.first.id!);
+                              }else{
+                                ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('正在回傳資料，請稍候！')));
+                              }
                             },
                             title: '抵達乘客上車地點',
                           )
@@ -301,10 +307,10 @@ class _CurrentTaskState extends State<CurrentTask> {
     );
   }
 
-
-
   //司機到了
   Future _putCaseArrived(String token, int caseId) async {
+    isRequesting = true;
+    ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
     String path = ServerApi.PATH_CASE_ARRIVE;
 
     try {
@@ -329,11 +335,16 @@ class _CurrentTaskState extends State<CurrentTask> {
 
       Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
       if(map['message']=='ok'){
-        // Navigator.push(
-        //     context, MaterialPageRoute(builder: (context) => OnTask(theCase: widget.theCase)));
+        if(_fetchTimer!=null){
+          _fetchTimer!.cancel();
+          _fetchTimer = null;
+        }
         var taskModel = context.read<TaskModel>();
         taskModel.isOnTask = true;
-        Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: taskModel.cases.first)));
+        final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: taskModel.cases.first)));
+        if(result == 'canceled'){
+          Navigator.pop(context,'canceled');
+        }
         setState(() {});
       }else{
         ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));
@@ -343,97 +354,151 @@ class _CurrentTaskState extends State<CurrentTask> {
       print(e);
       return "error";
     }
+    isRequesting = false;
   }
 
-  //乘客上車了
-  Future _putCaseCatched(String token, Case theCase) async {
-    String path = ServerApi.PATH_CASE_CATCHED;
-
+  Future _fetchCaseState(String token, int caseId) async {
+    String path = ServerApi.PATH_GET_CASE_DETAIL;
+    print(token);
     try {
-      // Map queryParameters = {
-      //   'phone': user.phone,
-      // };
-
-      final queryParameters = {
-        'case_id': theCase.id.toString(),
-      };
-
-      final response = await http.put(
-        ServerApi.standard(path: path, queryParameters: queryParameters),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Token $token',
-        },
-        // body: jsonEncode(queryParameters)
-      );
-
-      print(response.body);
-
-      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
-      if(map['message']=='ok'){
-        var taskModel = context.read<TaskModel>();
-        taskModel.isOnTask = true;
-        Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: theCase)));
-        setState(() {});
-      }else{
-        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));
-      }
-
-    } catch (e) {
-      print(e);
-      return "error";
-    }
-  }
-
-  Future _putCaseCanceled(String token, String memo, int caseId) async {
-    String path = ServerApi.PATH_CASE_CANCEL;
-
-    try {
-      final bodyParams = {
-        'memo': memo,
-      };
-
       final queryParameters = {
         'case_id': caseId.toString(),
       };
 
-      final response = await http.put(
-        ServerApi.standard(path: path, queryParameters: queryParameters),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-          'Authorization': 'Token $token',
-        },
-        body: jsonEncode(bodyParams)
+      final response = await http.get(
+        ServerApi.standard(path: path,queryParameters: queryParameters),
       );
 
+      // print(response.body);
+
       Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
-      if(map['message']=='ok'){
+      Case currentCase = Case.fromJson(map);
+      print('case state ${currentCase.caseState}');
+      if(currentCase.caseState=='canceled'){
+        if(_fetchTimer!=null){
+          _fetchTimer!.cancel();
+          _fetchTimer = null;
+        }
+
         var taskModel = context.read<TaskModel>();
         taskModel.resetTask();
-        if(taskModel.cases.isEmpty) {
-          Navigator.popUntil(context, ModalRoute.withName('/main'));
-        }else{
-          setState(() {});
-        }
-      }else{
-        ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));
+        //回到首頁並帶參數
+        Navigator.pop(context,'canceled');
       }
+
+      setState(() {});
 
     } catch (e) {
       print(e);
-      return "error";
     }
   }
 
-  void _launchMap(String address) async {
-    String query = Uri.encodeComponent(address);
-    String googleUrl = "https://www.google.com/maps/search/?api=1&query=$query";
-    Uri googleUri = Uri.parse(googleUrl);
+  // Future _putCaseCanceled(String token, String memo, int caseId) async {
+  //   String path = ServerApi.PATH_CASE_CANCEL;
+  //
+  //   try {
+  //     final bodyParams = {
+  //       'memo': memo,
+  //     };
+  //
+  //     final queryParameters = {
+  //       'case_id': caseId.toString(),
+  //     };
+  //
+  //     final response = await http.put(
+  //       ServerApi.standard(path: path, queryParameters: queryParameters),
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //         'Authorization': 'Token $token',
+  //       },
+  //       body: jsonEncode(bodyParams)
+  //     );
+  //
+  //     Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+  //     if(map['message']=='ok'){
+  //       var taskModel = context.read<TaskModel>();
+  //       taskModel.resetTask();
+  //       if(taskModel.cases.isEmpty) {
+  //         Navigator.popUntil(context, ModalRoute.withName('/main'));
+  //       }else{
+  //         setState(() {});
+  //       }
+  //     }else{
+  //       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));
+  //     }
+  //
+  //   } catch (e) {
+  //     print(e);
+  //     return "error";
+  //   }
+  // }
+  //
+  // void _launchMap(String address) async {
+  //   String query = Uri.encodeComponent(address);
+  //   String googleUrl = "https://www.google.com/maps/search/?api=1&query=$query";
+  //   Uri googleUri = Uri.parse(googleUrl);
+  //
+  //   if (await canLaunchUrl(googleUri)) {
+  //     await launchUrl(googleUri);
+  //   }
+  // }
+  //
+  // //乘客上車了
+  // Future _putCaseCatched(String token, Case theCase) async {
+  //   String path = ServerApi.PATH_CASE_CATCHED;
+  //
+  //   try {
+  //     // Map queryParameters = {
+  //     //   'phone': user.phone,
+  //     // };
+  //
+  //     final queryParameters = {
+  //       'case_id': theCase.id.toString(),
+  //     };
+  //
+  //     final response = await http.put(
+  //       ServerApi.standard(path: path, queryParameters: queryParameters),
+  //       headers: <String, String>{
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //         'Authorization': 'Token $token',
+  //       },
+  //       // body: jsonEncode(queryParameters)
+  //     );
+  //
+  //     print(response.body);
+  //
+  //     Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+  //     if(map['message']=='ok'){
+  //       var taskModel = context.read<TaskModel>();
+  //       taskModel.isOnTask = true;
+  //       Navigator.push(context, MaterialPageRoute(builder: (context) => OnTask(theCase: theCase)));
+  //       setState(() {});
+  //     }else{
+  //       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('可能網路不佳，請再試一次！')));
+  //     }
+  //
+  //   } catch (e) {
+  //     print(e);
+  //     return "error";
+  //   }
+  // }
 
-    if (await canLaunchUrl(googleUri)) {
-      await launchUrl(googleUri);
-    }
-  }
+  // Future _getLatLngFromAddress(String address) async{
+  //   String geocodingKey = "AIzaSyCrzmspoFyEFYlQyMqhEkt3x5kkY8U3C-Y";
+  //   String path = '${ServerApi.PATH_GEOCODE}$address&key=$geocodingKey';
+  //   print(path);
+  //   try {
+  //     final response = await http.get(Uri.parse(path));
+  //     if (response.statusCode == 200) {
+  //       Map<String, dynamic> data = json.decode(response.body);
+  //       print(data['status']);
+  //       print(data['results'][0]['formatted_address']);
+  //       setState(() {});
+  //     }
+  //   } catch (e) {
+  //     print(e);
+  //   }
+  // }
 
 }
 

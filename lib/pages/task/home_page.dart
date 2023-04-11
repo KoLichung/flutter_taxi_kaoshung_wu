@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_taxi_chinghsien/notifier_models/task_model.dart';
+import 'package:flutter_taxi_chinghsien/pages/task/cancel_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -13,6 +15,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/serverApi.dart';
 import '../../color.dart';
+import '../../main.dart';
 import '../../models/case.dart';
 import '../../notifier_models/user_model.dart';
 import '../../widgets/custom_elevated_button.dart';
@@ -44,7 +47,8 @@ class _HomePageState extends State<HomePage> {
   );
 
   Timer? _taskTimer;
-  int _taskWaitingTime = 15;
+  int _taskWaitingTime = 17;
+  bool isRefusing = false;
 
   void _startTaskTimer(int currentTime) {
     _taskWaitingTime = currentTime;
@@ -64,9 +68,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-
   @override
-  void initState() {
+  void initState(){
     super.initState();
     _handlePermission();
     _getLatestAppVersion();
@@ -78,14 +81,15 @@ class _HomePageState extends State<HomePage> {
     if(userModel.deviceId==null){
       _getDeviceInfo();
     }
+
     if(userModel.isOnline && userModel.user!.isPassed!){
+        _putUpdateOnlineState(userModel.token!, true);
         print('start timer');
         _timer = Timer.periodic(Duration(seconds: timerPeriod), (timer) {
           // print('Hello world, timer: $timer.tick');
           _fetchCases(userModel.token!);
         });
     }
-
   }
 
   @override
@@ -105,6 +109,76 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    // _showNotification();
+    // _checkLocationPermission();
+
+    var userModel = context.read<UserModel>();
+    var taskModel = context.read<TaskModel>();
+
+    if(userModel.isOnline && userModel.user!.isPassed! && userModel.positionStreamSubscription == null){
+      userModel.positionStreamSubscription =  Geolocator.getPositionStream(locationSettings: locationSettings).listen((Position? position) {
+        if(position!=null){
+          print('${position.latitude.toString()}, ${position.longitude.toString()}');
+
+          if(userModel.lastUpdateLocationTime !=null && userModel.currentPosition != null){
+            DateTime nowTime = DateTime.now();
+            DateTime lastTime = userModel.lastUpdateLocationTime!;
+            Duration diff = nowTime.difference(lastTime);
+            double currentVelocity = calculateSpeed(userModel.currentPosition!, position, diff.inSeconds);
+
+            if(currentVelocity.isNaN){
+              userModel.positionUpdateCount = 0;
+              _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+            }else if(currentVelocity >= 30 && userModel.positionUpdateCount >= 6){
+              userModel.positionUpdateCount = 0;
+              _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+            }else if(currentVelocity < 30 && currentVelocity >= 15 && userModel.positionUpdateCount >= 3){
+              userModel.positionUpdateCount = 0;
+              _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+            }else if(currentVelocity < 15 && currentVelocity >= 5 && userModel.positionUpdateCount >= 2){
+              userModel.positionUpdateCount = 0;
+              _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+            }else if(currentVelocity < 5 && currentVelocity > 0){
+              userModel.positionUpdateCount = 0;
+              _fetchUpdateLatLng(userModel.token!, position.latitude, position.longitude);
+            }
+          }
+
+          userModel.lastUpdateLocationTime = DateTime.now();
+          userModel.positionUpdateCount ++;
+
+          userModel.currentPosition = position;
+
+
+          if(taskModel.isOnTask){
+            // current velocity
+            if(taskModel.routePositions.isNotEmpty && taskModel.lastRecordTime!=null){
+              DateTime nowTime = DateTime.now();
+              DateTime lastTime = taskModel.lastRecordTime!;
+              Duration diff = nowTime.difference(lastTime);
+              try{
+                taskModel.currentVelocity = calculateSpeed(userModel.currentPosition!, taskModel.routePositions.last, diff.inSeconds);
+              }catch(e){
+                print(e);
+              }
+            }
+
+            //total distance
+            taskModel.routePositions.add(position);
+            int listLength = taskModel.routePositions.length;
+            if(listLength >= 2){
+              taskModel.totalDistance = taskModel.totalDistance + calculateDistance(taskModel.routePositions[listLength-1].latitude, taskModel.routePositions[listLength-1].longitude, taskModel.routePositions[listLength-2].latitude, taskModel.routePositions[listLength-2].longitude);
+            }
+
+            taskModel.lastRecordTime = DateTime.now();
+          }
+        }else{
+          print('Unknown position');
+        }
+      });
+    }
+
+
     return WillPopScope(
         onWillPop: () async => false,
         child: Scaffold(
@@ -180,6 +254,11 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // _checkLocationPermission() async {
+  //   LocationPermission permission = await Geolocator.requestPermission();
+  //   print(permission);
+  // }
+
   void actionOffline(){
     var userModel = context.read<UserModel>();
     userModel.resetPositionParams();
@@ -238,7 +317,7 @@ class _HomePageState extends State<HomePage> {
                       DateTime nowTime = DateTime.now();
                       DateTime lastTime = userModel.lastUpdateLocationTime!;
                       Duration diff = nowTime.difference(lastTime);
-                      double currentVelocity = calCulateSpeed(userModel.currentPosition!, position, diff.inSeconds);
+                      double currentVelocity = calculateSpeed(userModel.currentPosition!, position, diff.inSeconds);
 
                       if(currentVelocity.isNaN){
                         userModel.positionUpdateCount = 0;
@@ -271,7 +350,7 @@ class _HomePageState extends State<HomePage> {
                         DateTime lastTime = taskModel.lastRecordTime!;
                         Duration diff = nowTime.difference(lastTime);
                         try{
-                          taskModel.currentVelocity = calCulateSpeed(userModel.currentPosition!, taskModel.routePositions.last, diff.inSeconds);
+                          taskModel.currentVelocity = calculateSpeed(userModel.currentPosition!, taskModel.routePositions.last, diff.inSeconds);
                         }catch(e){
                           print(e);
                         }
@@ -300,7 +379,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  double calCulateSpeed(Position currentPosition, Position lastPosition, int durationSeconds){
+  double calculateSpeed(Position currentPosition, Position lastPosition, int durationSeconds){
     double distance = calculateDistance(currentPosition.latitude, currentPosition.longitude, lastPosition.latitude, lastPosition.longitude);
     double speed = distance * 1000 / durationSeconds;
     return speed;
@@ -368,6 +447,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     // Text('空派任務：${myCases[i].shipState!}'),
                     Center(child: Text('倒數：$_taskWaitingTime 秒')),
+                    Text('${myCases[i].carTeamName}'),
                     Row(children: [
                       Container(
                         margin:const EdgeInsets.fromLTRB(0,4,8,0),
@@ -383,7 +463,8 @@ class _HomePageState extends State<HomePage> {
                     Text('預計行車時間：${_getExpectTimeString(myCases[i].expectSecond! + 120)}'),
                     Text('上車地：${myCases[i].onAddress}'),
                     (myCases[i].offAddress!="")?Text('下車地：${myCases[i].offAddress}'):Container(),
-                    // (myCases[i].memo!="")?Text('備註：${myCases[i].memo}'):Container(),
+                    (myCases[i].timeMemo!="")?Text('時間：${myCases[i].timeMemo}'):Container(),
+                    (myCases[i].memo!="")?Text('備註：${myCases[i].memo}'):Container(),
                     const SizedBox(height: 10,),
                     CustomElevatedButton(
                         onPressed: (){
@@ -398,6 +479,7 @@ class _HomePageState extends State<HomePage> {
                           var userModel = context.read<UserModel>();
                           _putCaseRefuse(userModel.token!, myCases[i]);
                           myCases.removeAt(i);
+                          isRefusing = true;
                         },
                         title: '拒絕',
                         color: AppColor.red)
@@ -456,6 +538,8 @@ class _HomePageState extends State<HomePage> {
     bool serviceEnabled;
     LocationPermission permission;
 
+    var userModel = context.read<UserModel>();
+
     // Test if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -466,8 +550,67 @@ class _HomePageState extends State<HomePage> {
     }
 
     permission = await Geolocator.checkPermission();
+    if (userModel.platformType == 'ios' && permission != LocationPermission.denied && permission != LocationPermission.always){
+      showDialog<void>(context: context,
+        barrierDismissible: false, // user must tap button!
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('位置使用權限'),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: const <Widget>[
+                  Text('App 需要知道您的位置，以告訴您附近案件。'),
+                  Text('請將權限調整為「永遠」'),
+                  Text('This app needs access to location to notify your nearby case.'),
+                  Text('Please change permission to "Always"'),
+                ],
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('確定'),
+                onPressed: () async {
+                  await Geolocator.openLocationSettings();
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+      if (userModel.platformType == 'ios' && permission != LocationPermission.always){
+        showDialog<void>(context: context,
+          barrierDismissible: false, // user must tap button!
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('位置使用權限'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: const <Widget>[
+                    Text('App 需要知道您的位置，以告訴您附近案件。'),
+                    Text('請將權限調整為「永遠」'),
+                    Text('This app needs access to location to notify your nearby case.'),
+                    Text('Please change permission to "Always"'),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('確定'),
+                  onPressed: () async {
+                    await Geolocator.openLocationSettings();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      }
       if (permission == LocationPermission.denied) {
         // Permissions are denied, next time you could try
         // requesting permissions again (this is also where
@@ -561,15 +704,22 @@ class _HomePageState extends State<HomePage> {
       }else{
         List<Case> cases = body.map((value) => Case.fromJson(value)).toList();
         if(myCases.isEmpty && cases.isNotEmpty){
-          _playLocalAsset();
+          if(!isRefusing){
+            _playLocalAsset();
+          }
         }
 
-        myCases = cases;
+        // 如果拒絕中, 跳過更新一次！
+        if(!isRefusing) {
+          myCases = cases;
+        }else{
+          isRefusing = false;
+        }
 
         if(myCases.isNotEmpty && _taskTimer==null){
           int currentTime = myCases.first.countdownSecond!;
-          if(currentTime==16){
-            currentTime = 15;
+          if(currentTime==18){
+            currentTime = 17;
           }
           _startTaskTimer(currentTime);
         }
@@ -618,7 +768,17 @@ class _HomePageState extends State<HomePage> {
 
         var taskModel = context.read<TaskModel>();
         taskModel.cases.add(theCase);
-        await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
+        final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const CurrentTask()));
+
+        print(result);
+        if(result=='canceled'){
+          showDialog<String>(
+              barrierDismissible: false,
+              context: context,
+              builder: (BuildContext context) {
+                return const CancelDialog();
+              });
+        }
 
         var userModel = context.read<UserModel>();
         if (userModel.isOnline && _timer == null){
@@ -628,12 +788,22 @@ class _HomePageState extends State<HomePage> {
           });
         }
       }else{
+        if(_taskTimer!=null) {
+          print('cancel task timer');
+          _taskTimer!.cancel();
+          _taskTimer=null;
+        }
         ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
       }
 
       setState(() {});
     } catch (e) {
       print(e);
+      if(_taskTimer!=null) {
+        print('cancel task timer');
+        _taskTimer!.cancel();
+        _taskTimer=null;
+      }
       ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('這個單可能已經被接走！')));
       // return "error";
     }

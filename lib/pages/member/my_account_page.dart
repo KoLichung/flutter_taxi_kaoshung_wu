@@ -4,6 +4,7 @@ import 'package:flutter_line_sdk/flutter_line_sdk.dart';
 import 'package:flutter_taxi_chinghsien/config/serverApi.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../color.dart';
 import '../../models/user.dart';
 import '../../notifier_models/user_model.dart';
@@ -21,6 +22,12 @@ class MyAccountPage extends StatefulWidget {
 }
 
 class _MyAccountPageState extends State<MyAccountPage> {
+
+  _deleteUserToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_token');
+    await prefs.remove('user');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,6 +122,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                       userModel.positionStreamSubscription!.cancel();
                       userModel.positionStreamSubscription = null;
                     }
+                    _deleteUserToken();
                     Navigator.popUntil(context, (Route<dynamic> route) => route.isFirst);
                   },
                 ),

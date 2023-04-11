@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_taxi_chinghsien/color.dart';
 
+
 class OnTaskPassengerOffDialog extends StatefulWidget {
+  final int task_price;
   final int before_left_money;
   final int dispatch_fee;
   final int after_left_money;
 
-  const OnTaskPassengerOffDialog({Key? key, required this.before_left_money, required this.dispatch_fee, required this.after_left_money});
+  const OnTaskPassengerOffDialog({Key? key, required this.task_price,required this.before_left_money, required this.dispatch_fee, required this.after_left_money});
 
   @override
   _OnTaskPassengerOffDialogState createState() => new _OnTaskPassengerOffDialogState();
@@ -32,6 +34,13 @@ class _OnTaskPassengerOffDialogState extends State<OnTaskPassengerOffDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('本趟結算車資：'),
+                Text('${widget.task_price}'),
+              ],
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -69,5 +78,6 @@ class _OnTaskPassengerOffDialogState extends State<OnTaskPassengerOffDialog> {
       ],
     );
   }
+
 }
 

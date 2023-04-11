@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:developer';
+import 'dart:ui';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -9,9 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_taxi_chinghsien/pages/log_in.dart';
 import 'package:flutter_taxi_chinghsien/pages/member/money_record.dart';
 import 'package:flutter_taxi_chinghsien/pages/member/my_account_page.dart';
-import 'package:flutter_taxi_chinghsien/pages/register.dart';
 import 'package:flutter_taxi_chinghsien/pages/task/home_page.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 
 import 'color.dart';
@@ -22,7 +23,7 @@ import 'notifier_models/user_model.dart';
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // If you're going to use other Firebase services in the background, such as Firestore,
   // make sure you call `initializeApp` before using other Firebase services.
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   print('Handling a background message ${message.messageId}');
 }
 
@@ -30,7 +31,47 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 late AndroidNotificationChannel channel;
 
 /// Initialize the [FlutterLocalNotificationsPlugin] package.
-late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+final StreamController<ReceivedNotification> didReceiveLocalNotificationStream = StreamController<ReceivedNotification>.broadcast();
+
+final StreamController<String?> selectNotificationStream = StreamController<String?>.broadcast();
+
+class ReceivedNotification {
+  ReceivedNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.payload,
+  });
+
+  final int id;
+  final String? title;
+  final String? body;
+  final String? payload;
+}
+
+/// A notification action which triggers a App navigation event
+const String navigationActionId = 'id_3';
+
+/// Defines a iOS/MacOS notification category for text input actions.
+const String darwinNotificationCategoryText = 'textCategory';
+
+/// Defines a iOS/MacOS notification category for plain actions.
+const String darwinNotificationCategoryPlain = 'plainCategory';
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse notificationResponse) {
+  // ignore: avoid_print
+  print('notification(${notificationResponse.id}) action tapped: '
+      '${notificationResponse.actionId} with'
+      ' payload: ${notificationResponse.payload}');
+  if (notificationResponse.input?.isNotEmpty ?? false) {
+    // ignore: avoid_print
+    print(
+        'notification action tapped with input: ${notificationResponse.input}');
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,12 +79,103 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   LineSDK.instance.setup('1657014064').then((_) {
     print('LineSDK Prepared');
   });
-  // await initializeService();
+
+  // const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings('ic_launcher');
+  //
+  // final List<DarwinNotificationCategory> darwinNotificationCategories =
+  // <DarwinNotificationCategory>[
+  //   DarwinNotificationCategory(
+  //     darwinNotificationCategoryText,
+  //     actions: <DarwinNotificationAction>[
+  //       DarwinNotificationAction.text(
+  //         'text_1',
+  //         'Action 1',
+  //         buttonTitle: 'Send',
+  //         placeholder: 'Placeholder',
+  //       ),
+  //     ],
+  //   ),
+  //   DarwinNotificationCategory(
+  //     darwinNotificationCategoryPlain,
+  //     actions: <DarwinNotificationAction>[
+  //       DarwinNotificationAction.plain('id_1', 'Action 1'),
+  //       DarwinNotificationAction.plain(
+  //         'id_2',
+  //         'Action 2 (destructive)',
+  //         options: <DarwinNotificationActionOption>{
+  //           DarwinNotificationActionOption.destructive,
+  //         },
+  //       ),
+  //       DarwinNotificationAction.plain(
+  //         navigationActionId,
+  //         'Action 3 (foreground)',
+  //         options: <DarwinNotificationActionOption>{
+  //           DarwinNotificationActionOption.foreground,
+  //         },
+  //       ),
+  //       DarwinNotificationAction.plain(
+  //         'id_4',
+  //         'Action 4 (auth required)',
+  //         options: <DarwinNotificationActionOption>{
+  //           DarwinNotificationActionOption.authenticationRequired,
+  //         },
+  //       ),
+  //     ],
+  //     options: <DarwinNotificationCategoryOption>{
+  //       DarwinNotificationCategoryOption.hiddenPreviewShowTitle,
+  //     },
+  //   )
+  // ];
+  //
+  // /// Note: permissions aren't requested here just to demonstrate that can be
+  // /// done later
+  // final DarwinInitializationSettings initializationSettingsDarwin =
+  // DarwinInitializationSettings(
+  //   requestAlertPermission: false,
+  //   requestBadgePermission: false,
+  //   requestSoundPermission: false,
+  //   onDidReceiveLocalNotification:
+  //       (int id, String? title, String? body, String? payload) async {
+  //     didReceiveLocalNotificationStream.add(
+  //       ReceivedNotification(
+  //         id: id,
+  //         title: title,
+  //         body: body,
+  //         payload: payload,
+  //       ),
+  //     );
+  //   },
+  //   notificationCategories: darwinNotificationCategories,
+  // );
+  //
+  // final InitializationSettings initializationSettings = InitializationSettings(
+  //   android: initializationSettingsAndroid,
+  //   iOS: initializationSettingsDarwin,
+  // );
+  //
+  // await flutterLocalNotificationsPlugin.initialize(
+  //   initializationSettings,
+  //   onDidReceiveNotificationResponse:
+  //       (NotificationResponse notificationResponse) {
+  //     switch (notificationResponse.notificationResponseType) {
+  //       case NotificationResponseType.selectedNotification:
+  //         selectNotificationStream.add(notificationResponse.payload);
+  //         break;
+  //       case NotificationResponseType.selectedNotificationAction:
+  //         if (notificationResponse.actionId == navigationActionId) {
+  //           selectNotificationStream.add(notificationResponse.payload);
+  //         }
+  //         break;
+  //     }
+  //   },
+  //   onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
+  // );
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(MultiProvider(
     providers: [
       ChangeNotifierProvider(
@@ -116,8 +248,13 @@ class _MyHomePageState extends State<MyHomePage> {
   int _selectedIndex = 0;
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
         child: pageCaller(_selectedIndex),

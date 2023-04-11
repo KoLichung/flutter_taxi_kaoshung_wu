@@ -6,11 +6,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_line_sdk/flutter_line_sdk.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_taxi_chinghsien/pages/register.dart';
 import 'package:flutter_taxi_chinghsien/pages/task/home_page.dart';
 import 'package:flutter_taxi_chinghsien/pages/task/new_passenger_dialog.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../color.dart';
 import 'package:http/http.dart' as http;
 import '../config/serverApi.dart';
@@ -67,28 +69,78 @@ class _LogInState extends State<LogIn> {
     FirebaseMessaging.onMessage.listen((RemoteMessage event) {
       print("message recieved");
       print(event.notification!.body);
+      // _showNotification();
       _playLocalAsset();
-      showDialog(context: context, builder: (_) {
-        return NewPassengerDialog();
-      });
+      // showDialog(context: context, builder: (_) {
+      //   return NewPassengerDialog();
+      // });
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       print('Message clicked!');
       //here need to check again if the task still available
-      showDialog(context: context, builder: (_) {
-        return NewPassengerDialog();
-      });
+      // showDialog(context: context, builder: (_) {
+      //   return NewPassengerDialog();
+      // });
     });
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
 
+    _getUserTokenAndRefreshUser();
+  }
+
+  _getUserTokenAndRefreshUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? token = prefs.getString('user_token');
+    print('this is server token $token');
+    var userModel = context.read<UserModel>();
+    if(token!=null){
+      userModel.token = token;
+
+      String? userString = prefs.getString('user');
+      if(userString!=null){
+        Map<String, dynamic> userMap = jsonDecode(userString);
+        User user = User.fromJson(userMap);
+        userModel.setUser(user);
+
+        if(user.isPassed!){
+          userModel.isOnline = true;
+        }else{
+          userModel.isOnline = false;
+        }
+
+        Navigator.of(context).pushNamed('/main');
+      }
+    }
+  }
+
+  _deleteUserToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_token');
+    await prefs.remove('user');
+  }
+
+  int id = 0;
+  Future<void> _showNotification() async {
+    print('here to show notification');
+    const AndroidNotificationDetails androidNotificationDetails =
+    AndroidNotificationDetails('your channel id', 'your channel name',
+        channelDescription: 'your channel description',
+        importance: Importance.max,
+        priority: Priority.high,
+        ticker: 'ticker');
+    const NotificationDetails notificationDetails =
+    NotificationDetails(android: androidNotificationDetails);
+    await flutterLocalNotificationsPlugin.show(
+        id++, 'plain title', 'plain body', notificationDetails,
+        payload: 'item x');
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       // appBar: AppBar(),
       backgroundColor: Colors.black54,
@@ -383,9 +435,16 @@ class _LogInState extends State<LogIn> {
 
       User theUser = User.fromJson(map);
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_token', token);
+      await prefs.setString('user', jsonEncode(theUser));
+
       return theUser;
     } catch (e) {
       print(e);
+
+      //token過期, 需重新登入
+      _deleteUserToken();
       return User();
     }
   }

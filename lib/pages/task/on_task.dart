@@ -8,17 +8,16 @@ import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:maps_launcher/maps_launcher.dart';
+import 'package:map_launcher/map_launcher.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../config/serverApi.dart';
-import '../../fake_customer_model.dart';
 import '../../color.dart';
 import '../../models/case.dart';
 import '../../notifier_models/user_model.dart';
 import '../../widgets/custom_elevated_button.dart';
 import '../../widgets/custom_small_elevated_button.dart';
-import '../../widgets/custom_small_oulined_text.dart';
 import 'on_task_passenger_off_dialog.dart';
 
 
@@ -39,6 +38,7 @@ class _OnTaskState extends State<OnTask> {
   String taskStatus = '接客中';
 
   bool isNextTaskVisible = false;
+  bool isRequesting = false;
 
   TextEditingController priceController = TextEditingController();
   Timer? _taskTimer;
@@ -49,48 +49,51 @@ class _OnTaskState extends State<OnTask> {
 
   bool isTimerButtonEnable = false;
   Timer? _buttonTimer;
-  Duration _buttonTimerDuration = const Duration(minutes: 5);
+  int _buttonSeconds = 300;
 
-  void _startButtonTimer(){
-    _buttonTimer = Timer.periodic(const Duration(seconds: 1), (_) => setButtonCountDown());
+  DateTime? startTime;
+  Timer? _fetchTimer;
+
+  Future<void> _startButtonTimer() async {
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setInt('buttonTimeSeconds', 300);
+    // await prefs.setBool('isReduceButtonTime', true);
+
+    _buttonTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.reload();
+      // _buttonSeconds = prefs.getInt('buttonTimeSeconds')!;
+      _buttonSeconds = _buttonSeconds -1;
+
+      if (_buttonSeconds <= 0) {
+        isTimerButtonEnable = true;
+        _stopButtonTimer();
+
+        // 第一次歸零會 start task timer, 用 _taskTimer == null 做檢查~
+        _startTaskTimer();
+      }
+      setState(() {});
+    });
   }
 
-  void _stopButtonTimer() {
+  Future<void> _stopButtonTimer() async {
     if (_buttonTimer!=null){
       _buttonTimer!.cancel();
       _buttonTimer = null;
     }
-    setState((){});
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setInt('buttonTimeSeconds', 300);
+    // await prefs.setBool('isReduceButtonTime', false);
+    _buttonSeconds = 300;
+    // setState((){});
   }
 
-  void _resetButtonTimer() {
+  Future<void> _resetButtonTimer() async {
     _startButtonTimer();
     setState((){
-      _buttonTimerDuration = const Duration(minutes: 5);
       isTimerButtonEnable = false;
     });
   }
-
-  void setButtonCountDown() {
-    const reduceSecondsBy = 1;
-    setState(() {
-      int seconds = _buttonTimerDuration.inSeconds - reduceSecondsBy;
-      if (seconds <= 0) {
-        if(_buttonTimer!=null){
-          _buttonTimer!.cancel();
-          _buttonTimer = null;
-        }
-
-        // 第一次歸零會 start task timer, 用 _taskTimer == null 做檢查~
-        _startTaskTimer();
-
-        isTimerButtonEnable = true;
-      } else {
-        _buttonTimerDuration = Duration(seconds: seconds);
-      }
-    });
-  }
-
 
   @override
   void initState() {
@@ -102,15 +105,23 @@ class _OnTaskState extends State<OnTask> {
 
     offAddress = widget.theCase.offAddress!;
 
-    //_startTaskTimer();
     _startButtonTimer();
+
+    var taskModel = context.read<TaskModel>();
+    _fetchTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      _fetchCaseState(userToken!, taskModel.cases.first.id!);
+    });
   }
 
-  void _startTaskTimer(){
+  Future<void> _startTaskTimer() async {
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setBool('isOnTask', true);
+    var taskModel = context.read<TaskModel>();
+    taskModel.startTime ??= DateTime.now();
+
     _taskTimer ??= Timer.periodic(const Duration(seconds: 5), (timer) {
         // 5 秒計算一次時間
         var taskModel = context.read<TaskModel>();
-        taskModel.secondTotal = taskModel.secondTotal + 5;
         taskModel.setCurrentTaskPrice();
       });
   }
@@ -124,15 +135,10 @@ class _OnTaskState extends State<OnTask> {
       _taskTimer!.cancel();
       _taskTimer = null;
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
-    String strDigits(int n) => n.toString().padLeft(2, '0');
-    String minutes = strDigits(_buttonTimerDuration.inMinutes.remainder(60));
-    String seconds = strDigits(_buttonTimerDuration.inSeconds.remainder(60));
-
     return WillPopScope(
         onWillPop: () async => false,
         child: Scaffold(
@@ -167,7 +173,7 @@ class _OnTaskState extends State<OnTask> {
                   }
                 }),
                 Consumer<TaskModel>(builder: (context, taskModel, child){
-                  return Text('目前的 公里數:${taskModel.totalDistance.toStringAsFixed(3)}km, 所有秒數：${taskModel.secondTotal}秒');
+                  return Text('目前的 公里數:${taskModel.totalDistance.toStringAsFixed(3)}km, 所有秒數：${taskModel.getSecondsTotal()}秒');
                 }),
                 Container(
                   margin: const EdgeInsets.all(16),
@@ -178,14 +184,20 @@ class _OnTaskState extends State<OnTask> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          text: '目前任務：',
-                          style: const TextStyle(color: AppColor.primary, fontSize: 22,),
-                          children: <TextSpan>[
-                            TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
-                          ],
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              text: '目前任務：',
+                              style: const TextStyle(color: AppColor.primary, fontSize: 18,),
+                              children: <TextSpan>[
+                                TextSpan(text: taskStatus,style: const TextStyle(color: AppColor.red,fontSize: 22,fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                          Text('${widget.theCase.carTeamName}'),
+                        ],
                       ),
                       // Padding(
                       //   padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -201,6 +213,24 @@ class _OnTaskState extends State<OnTask> {
                           ],
                         ),
                       ),//上車
+                      RichText(
+                        text: TextSpan(
+                          text: '時間：',
+                          style: const TextStyle(color: AppColor.primary, fontSize: 20,),
+                          children: <TextSpan>[
+                            TextSpan(text: widget.theCase.timeMemo,style: const TextStyle(color: Colors.black87)),
+                          ],
+                        ),
+                      ),//上車
+                      RichText(
+                        text: TextSpan(
+                          text: '備註：',
+                          style: const TextStyle(color: AppColor.primary, fontSize: 20,),
+                          children: <TextSpan>[
+                            TextSpan(text: widget.theCase.memo,style: const TextStyle(color: Colors.black87)),
+                          ],
+                        ),
+                      ),//上車
                       Row(
                         children: [
                           const Text("下車地：", style:  TextStyle(color: AppColor.primary, fontSize: 20,)),
@@ -209,9 +239,38 @@ class _OnTaskState extends State<OnTask> {
                               icon: const Icon(Icons.near_me_outlined,size: 16,),
                               title: '導航',
                               color: AppColor.primary,
-                              onPressed: (){
+                              onPressed: () async {
                                 // _launchMap(offAddress);
-                                MapsLauncher.launchQuery(offAddress);
+                                // MapsLauncher.launchQuery(offAddress);
+
+                                bool isGoogleMaps = await MapLauncher.isMapAvailable(MapType.google) ?? false;
+                                print('onLat ${taskModel.cases.first.offLat} onLng ${taskModel.cases.first.offLng}');
+                                try{
+                                  if (isGoogleMaps == true) {
+                                    await MapLauncher.showDirections(
+                                      mapType: MapType.google,
+                                      directionsMode: DirectionsMode.driving,
+                                      destinationTitle: taskModel.cases.first.onAddress!,
+                                      destination: Coords(
+                                        double.parse(taskModel.cases.first.offLat!),
+                                        double.parse(taskModel.cases.first.offLng!),
+                                      ),
+                                    );
+                                  } else {
+                                    await MapLauncher.showDirections(
+                                      mapType: MapType.apple,
+                                      directionsMode: DirectionsMode.driving,
+                                      destinationTitle: taskModel.cases.first.onAddress!,
+                                      destination: Coords(
+                                        double.parse(taskModel.cases.first.offLat!),
+                                        double.parse(taskModel.cases.first.offLng!),
+                                      ),
+                                    );
+                                  }
+                                }catch(e){
+                                  print(e);
+                                }
+
                               })
                         ],
                       ),
@@ -266,6 +325,7 @@ class _OnTaskState extends State<OnTask> {
                                     }
                                   },
                                   keyboardType: TextInputType.number,
+                                  enabled: false,
                                   style: const TextStyle(color: Colors.black),
                                   decoration: const InputDecoration(
                                     prefixIconConstraints: BoxConstraints(minWidth: 10, maxHeight: 20),
@@ -283,7 +343,7 @@ class _OnTaskState extends State<OnTask> {
                               })),
                         ],
                       ),
-                      const Text('(僅供參考，請依實際車資輸入)',style: TextStyle(color: AppColor.red),),
+                      // const Text('(僅供參考，請依實際車資輸入)',style: TextStyle(color: AppColor.red),),
                       const SizedBox(height: 20),
                       !isPassengerOnBoard ?
                       Row(
@@ -304,39 +364,37 @@ class _OnTaskState extends State<OnTask> {
                               onPressed: isTimerButtonEnable?
                                   (){
                                 // here need to notify server
-                                _putCaseNotifyCustomer(userToken!, widget.theCase.id!);
-                                _resetButtonTimer();
+                                if(!isRequesting){
+                                  _putCaseNotifyCustomer(userToken!, widget.theCase.id!);
+                                  _resetButtonTimer();
+                                }else{
+                                  ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
+                                }
                               }
                                   : null,
                               style: ElevatedButton.styleFrom(
                                   backgroundColor: isTimerButtonEnable ? AppColor.primary : Colors.grey,
                                   elevation: 0
                               ),
-                              child: SizedBox(
-                                height: 46,
-                                width: 185,
-                                child: Align(
-                                  child:
-                                  isTimerButtonEnable
-                                      ? const Text('乘客未上車 05:00',style: TextStyle(fontSize: 20),)
-                                      : Row(
-                                    children: [
-                                      const Text('乘客未上車 ',style: TextStyle(fontSize: 20),),
-                                      Text('$minutes:$seconds',style: const TextStyle(fontSize: 20),),
-                                    ],
-                                  ),
-                                  alignment: Alignment.center,
-                                ),
-                              )
+                              child:
+                                isTimerButtonEnable
+                                    ?
+                                const Text('乘客未上車 \n05:00',style: TextStyle(fontSize: 20),textAlign: TextAlign.center,)
+                                    :
+                                Text('乘客未上車 \n ${_getButtonTimeString(_buttonSeconds!)}',style: TextStyle(fontSize: 20),textAlign: TextAlign.center,),
                           ),
                         ],
                       )
                           :
                       CustomElevatedButton(
                           onPressed: (){
-                            var userModel = context.read<UserModel>();
-                            int intPrice = double.parse(priceController.text).toInt();
-                            _putCaseFinish(userModel.token!, widget.theCase.id!, offAddress, intPrice);
+                            if(!isRequesting){
+                              var userModel = context.read<UserModel>();
+                              int intPrice = double.parse(priceController.text).toInt();
+                              _putCaseFinish(userModel.token!, widget.theCase.id!, offAddress, intPrice);
+                            }else{
+                              ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
+                            }
                           },
                           title: '乘客下車'
                       ),
@@ -351,9 +409,20 @@ class _OnTaskState extends State<OnTask> {
     );
   }
 
+  String _getButtonTimeString(int buttonSeconds){
+    int minutes = buttonSeconds~/60;
+    int seconds = buttonSeconds%60;
+    if(seconds>=10){
+      return '0$minutes:$seconds';
+    }else{
+      return '0$minutes:0$seconds';
+    }
+  }
+
   Future _putCaseNotifyCustomer(String token, int caseId) async {
     String path = ServerApi.PATH_CASE_NOTIFY_CUSTOMER;
-
+    isRequesting = true;
+    ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
     try {
       final queryParameters = {
         'case_id': caseId.toString(),
@@ -381,11 +450,13 @@ class _OnTaskState extends State<OnTask> {
       print(e);
       return "error";
     }
+    isRequesting = false;
   }
 
   Future _putCaseCatched(String token, int caseId) async {
     String path = ServerApi.PATH_CASE_CATCHED;
-
+    isRequesting = true;
+    ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
     try {
       final queryParameters = {
         'case_id': caseId.toString(),
@@ -413,11 +484,13 @@ class _OnTaskState extends State<OnTask> {
       print(e);
       return "error";
     }
+    isRequesting = false;
   }
 
   Future _putCaseFinish(String token, int caseId, String offAddress, int caseMoney) async {
     String path = ServerApi.PATH_CASE_FINISH;
-
+    isRequesting = true;
+    ScaffoldMessenger.of(context)..removeCurrentSnackBar()..showSnackBar(const SnackBar(content: Text('回傳資料中~')));
     try {
       final queryParameters = {
         'case_id': caseId.toString(),
@@ -450,6 +523,10 @@ class _OnTaskState extends State<OnTask> {
           _taskTimer!.cancel();
           _taskTimer = null;
         }
+        if(_fetchTimer!=null){
+          _fetchTimer!.cancel();
+          _fetchTimer = null;
+        }
 
         var userModel = context.read<UserModel>();
         userModel.user!.leftMoney = map["after_left_money"];
@@ -458,7 +535,7 @@ class _OnTaskState extends State<OnTask> {
             barrierDismissible: false,
             context: context,
             builder: (BuildContext context) {
-              return OnTaskPassengerOffDialog(before_left_money: map['before_left_money'],dispatch_fee: map['dispatch_fee'],after_left_money: map['after_left_money']);
+              return OnTaskPassengerOffDialog(task_price:caseMoney ,before_left_money: map['before_left_money'],dispatch_fee: map['dispatch_fee'],after_left_money: map['after_left_money']);
             });
 
         if(taskModel.cases.isEmpty) {
@@ -474,6 +551,50 @@ class _OnTaskState extends State<OnTask> {
     } catch (e) {
       print(e);
       return "error";
+    }
+    isRequesting = false;
+  }
+
+  Future _fetchCaseState(String token, int caseId) async {
+    String path = ServerApi.PATH_GET_CASE_DETAIL;
+    print(token);
+    try {
+      final queryParameters = {
+        'case_id': caseId.toString(),
+      };
+
+      final response = await http.get(
+        ServerApi.standard(path: path,queryParameters: queryParameters),
+      );
+
+      // print(response.body);
+
+      Map<String, dynamic> map = json.decode(utf8.decode(response.body.runes.toList()));
+      Case currentCase = Case.fromJson(map);
+      print('case state ${currentCase.caseState}');
+      if(currentCase.caseState=='canceled'){
+        if(_fetchTimer!=null){
+          _fetchTimer!.cancel();
+          _fetchTimer = null;
+        }
+        if(_taskTimer!=null){
+          _taskTimer!.cancel();
+          _taskTimer = null;
+        }
+        if (_buttonTimer!=null){
+          _buttonTimer!.cancel();
+          _buttonTimer = null;
+        }
+        var taskModel = context.read<TaskModel>();
+        taskModel.resetTask();
+        //回到首頁並帶參數
+        Navigator.pop(context,'canceled');
+      }
+
+      setState(() {});
+
+    } catch (e) {
+      print(e);
     }
   }
 

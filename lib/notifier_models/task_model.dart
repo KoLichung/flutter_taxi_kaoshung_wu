@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/case.dart';
 
@@ -11,19 +12,36 @@ class TaskModel extends ChangeNotifier {
   List<Position> routePositions = [];
   double currentTaskPrice = 50.0;
   double totalDistance = 0;
-  int secondTotal = 0;
+  // int secondTotal = 0;
 
   DateTime? lastRecordTime;
   double currentVelocity = -1;
+
+  DateTime? startTime;
 
   void addCase(Case newCase){
     cases.add(newCase);
     notifyListeners();
   }
 
-  void setCurrentTaskPrice(){
+  int getSecondsTotal(){
+    int secondTotal = 0;
+    if(startTime!=null){
+      DateTime currentTime = DateTime.now();
+      secondTotal = currentTime.difference(startTime!).inSeconds;
+    }
+    return secondTotal;
+  }
+
+  Future<void> setCurrentTaskPrice() async {
+    int secondTotal = 0;
+    if(startTime!=null){
+      DateTime currentTime = DateTime.now();
+      secondTotal = currentTime.difference(startTime!).inSeconds;
+    }
+
     if(totalDistance >= 0.01){
-      int totalDistanceInMeter = (totalDistance * 100).floor();
+      int totalDistanceInMeter = (totalDistance * 1000).floor();
       int times = totalDistanceInMeter ~/ 5;
       currentTaskPrice = 50.0 + times * 0.1;
     }else{
@@ -35,18 +53,23 @@ class TaskModel extends ChangeNotifier {
 
     print('current velocity $currentVelocity');
     print('total distance $totalDistance');
+    print('startTime $startTime');
     print('total second $secondTotal');
     notifyListeners();
   }
 
-  void resetTask(){
+  Future<void> resetTask() async {
+    // final prefs = await SharedPreferences.getInstance();
+    // await prefs.setInt('secondTotal', 0);
+    // await prefs.setBool('isOnTask', false);
+
     currentTaskPrice = 50.0;
     totalDistance = 0;
     routePositions.clear();
     isOnTask = false;
-    secondTotal = 0;
     lastRecordTime = null;
     currentVelocity = -1;
+    startTime = null;
 
     //移除最上面那個 case
     cases.removeAt(0);
